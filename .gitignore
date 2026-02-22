@@ -20,9 +20,9 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data (large files - keep structure, ignore data)
+# Data (large files)
 data/raw/Ship_of_theseus_paraphrased_copus/
-data/processed/*.csv
+data/processed/**/*.parquet
 data/processed/*.parquet
 *.pkl
 *.pt

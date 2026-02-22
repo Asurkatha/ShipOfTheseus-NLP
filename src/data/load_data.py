@@ -1,27 +1,16 @@
 """
-Data loading utilities for the Ship of Theseus corpus.
+Data loading for the Ship of Theseus corpus.
 
-Actual corpus structure (discovered 2026-02-21):
+Corpus structure:
     Ship_of_theseus_paraphrased_copus/
-        paraphrased_datasets/
-            cmv_paraphrased.csv      (cols: source, key, text, version_name)
-            eli5_paraphrased.csv
-            sci_gen_paraphrased.csv
-            tldr_paraphrased.csv
-            wp_paraphrased.csv
-            xsum_paraphrased.csv
-            yelp_paraphrased.csv
-        train_datasets/
-            cmv_train.csv            (cols: source, key, text)
-            eli5_train.csv
-            ...
+        paraphrased_datasets/   <- 7 CSVs, cols: source, key, text, version_name
+        train_datasets/         <- 7 CSVs, cols: source, key, text
 
 7 datasets, 7 paraphraser variants, 7 source authors, 22 version strings.
 """
 
+import shutil
 import pandas as pd
-from pathlib import Path
-from typing import Optional
 from src.utils.config import (
     DATA_RAW, DATA_CLONED, DATA_PARAPHRASED, DATA_TRAIN,
     ALL_DATASETS, PARAPHRASERS, MAX_SAMPLES_PER_SUBSET,
@@ -29,58 +18,37 @@ from src.utils.config import (
 )
 
 
-# ─────────────────────────────────────────────
-# Core loading functions
-# ─────────────────────────────────────────────
-
-def load_paraphrased(dataset_name: str) -> pd.DataFrame:
-    """
-    Load a single paraphrased dataset (e.g., 'xsum').
-    File: paraphrased_datasets/<name>_paraphrased.csv
-    Columns: source, key, text, version_name
-    """
+def load_paraphrased(dataset_name):
+    """Load a single paraphrased CSV."""
     fpath = DATA_PARAPHRASED / f"{dataset_name}_paraphrased.csv"
     if not fpath.exists():
-        raise FileNotFoundError(
-            f"Paraphrased file not found: {fpath}\n"
-            f"Available datasets: {ALL_DATASETS}"
-        )
+        raise FileNotFoundError(f"Not found: {fpath}")
     df = pd.read_csv(fpath)
     df["dataset"] = dataset_name
     df["split"] = "test"
-    print(f"  Loaded {dataset_name}_paraphrased.csv: {len(df)} rows")
+    print(f"  {dataset_name}_paraphrased.csv: {len(df)} rows")
     return df
 
 
-def load_train(dataset_name: str) -> pd.DataFrame:
-    """
-    Load a single train dataset (unparaphrased).
-    File: train_datasets/<name>_train.csv
-    Columns: source, key, text
-    """
+def load_train(dataset_name):
+    """Load a single train (unparaphrased) CSV."""
     fpath = DATA_TRAIN / f"{dataset_name}_train.csv"
     if not fpath.exists():
-        raise FileNotFoundError(
-            f"Train file not found: {fpath}\n"
-            f"Available datasets: {ALL_DATASETS}"
-        )
+        raise FileNotFoundError(f"Not found: {fpath}")
     df = pd.read_csv(fpath)
     df["dataset"] = dataset_name
     df["split"] = "train"
-    df["version_name"] = "train"  # Mark as train, not paraphrased
-    print(f"  Loaded {dataset_name}_train.csv: {len(df)} rows")
+    df["version_name"] = "train"
+    print(f"  {dataset_name}_train.csv: {len(df)} rows")
     return df
 
 
-def add_tier_labels(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add 'tier' (T0, T1, T2, T3) and 'paraphraser' columns
-    from the version_name column.
-    """
+def add_tier_labels(df):
+    """Add tier (T0-T3), paraphraser key, and display name columns."""
     if "version_name" not in df.columns:
-        print("  Warning: no 'version_name' column found.")
         df["tier"] = "unknown"
         df["paraphraser"] = "unknown"
+        df["paraphraser_name"] = "unknown"
         return df
 
     df["tier"] = df["version_name"].apply(
@@ -90,65 +58,36 @@ def add_tier_labels(df: pd.DataFrame) -> pd.DataFrame:
         lambda v: "none" if v == "train" else version_to_paraphraser(v)
     )
 
-    # Map paraphraser keys to display names
     name_map = {k: v["name"] for k, v in PARAPHRASERS.items()}
-    name_map["original"] = "original"
-    name_map["none"] = "none"
+    name_map.update({"original": "original", "none": "none"})
     df["paraphraser_name"] = df["paraphraser"].map(name_map).fillna(df["paraphraser"])
 
     return df
 
 
-# ─────────────────────────────────────────────
-# Full corpus loading
-# ─────────────────────────────────────────────
-
-def load_corpus(datasets: Optional[list] = None,
-                include_train: bool = False,
-                max_samples: Optional[int] = MAX_SAMPLES_PER_SUBSET
-                ) -> pd.DataFrame:
+def load_corpus(datasets=None, include_train=False, max_samples=MAX_SAMPLES_PER_SUBSET):
     """
-    Load the paraphrased corpus with tier labels.
-
-    Args:
-        datasets: List of dataset names. If None, loads all 7.
-        include_train: Whether to also load train (unparaphrased) data.
-        max_samples: Cap samples per dataset for faster iteration.
-
-    Returns:
-        DataFrame with columns:
-        [source, key, text, version_name, dataset, split, tier,
-         paraphraser, paraphraser_name]
+    Load the full corpus with tier labels.
+    If datasets is None, loads all 7.
     """
     datasets = datasets or ALL_DATASETS
     all_dfs = []
 
     for ds in datasets:
-        print(f"\n{'='*50}")
-        print(f"Loading: {ds}")
-        print(f"{'='*50}")
-
+        print(f"\n{'='*50}\nLoading: {ds}\n{'='*50}")
         try:
-            df = load_paraphrased(ds)
-            all_dfs.append(df)
+            all_dfs.append(load_paraphrased(ds))
         except FileNotFoundError as e:
-            print(f"  SKIP paraphrased: {e}")
+            print(f"  SKIP: {e}")
 
         if include_train:
             try:
-                df_train = load_train(ds)
-                all_dfs.append(df_train)
+                all_dfs.append(load_train(ds))
             except FileNotFoundError as e:
-                print(f"  SKIP train: {e}")
+                print(f"  SKIP: {e}")
 
     if not all_dfs:
-        raise RuntimeError(
-            "No datasets loaded. Ensure the corpus is cloned at:\n"
-            f"  {DATA_CLONED}\n"
-            "Expected structure:\n"
-            f"  {DATA_PARAPHRASED}/<name>_paraphrased.csv\n"
-            f"  {DATA_TRAIN}/<name>_train.csv"
-        )
+        raise RuntimeError(f"No datasets loaded. Check {DATA_CLONED}")
 
     corpus = pd.concat(all_dfs, ignore_index=True)
     corpus = add_tier_labels(corpus)
@@ -159,61 +98,31 @@ def load_corpus(datasets: Optional[list] = None,
             lambda g: g.sample(n=min(len(g), max_samples), random_state=42)
         ).reset_index(drop=True)
         if len(corpus) < before:
-            print(f"\n  Sampled from {before} to {len(corpus)} rows")
+            print(f"\n  Sampled {before} -> {len(corpus)} rows")
 
-    print(f"\n{'='*50}")
-    print(f"CORPUS SUMMARY")
-    print(f"{'='*50}")
-    print(f"Total rows: {len(corpus)}")
-    print(f"\nDatasets ({len(datasets)}):")
-    print(corpus["dataset"].value_counts().to_string())
-    print(f"\nTiers:")
-    print(corpus["tier"].value_counts().sort_index().to_string())
-    print(f"\nParaphrasers:")
-    print(corpus["paraphraser_name"].value_counts().to_string())
-    print(f"\nSources:")
-    print(corpus["source"].value_counts().to_string())
+    print(f"\n{'='*50}\nCORPUS SUMMARY\n{'='*50}")
+    print(f"Total: {len(corpus)} rows")
+    for col in ["dataset", "tier", "paraphraser_name", "source"]:
+        print(f"\n{col}:")
+        print(corpus[col].value_counts().to_string())
 
     return corpus
 
 
-# ─────────────────────────────────────────────
-# Paired text extraction (for similarity analysis)
-# ─────────────────────────────────────────────
-
-def get_paired_texts(corpus: pd.DataFrame, paraphraser_key: str,
-                     dataset: str = None,
-                     source: str = None) -> pd.DataFrame:
+def get_paired_texts(corpus, paraphraser_key, dataset=None, source=None):
     """
-    Get T0-T1-T2-T3 aligned text pairs for a specific paraphraser.
-    Aligns by 'key' + 'source' so we track the same document across
-    iterations.
+    Align T0-T3 texts for a specific paraphraser chain.
+    Pivots by (key, source) so we can compare the same document across tiers.
 
-    IMPORTANT (learned from Assignment 2):
-        - 'source' = who PRODUCED the text (Human, OpenAI, LLAMA, etc.)
-        - 'version_name' = which PARAPHRASING CHAIN was applied
-        These are independent axes. Each (key, source) pair has its own
-        T0 original and T1-T3 paraphrased versions.
-
-    Args:
-        corpus: Full corpus DataFrame (with tier labels)
-        paraphraser_key: Paraphraser config key (e.g., 'chatgpt',
-                         'dipper(low)', 'pegasus(full)')
-        dataset: Optional filter for a single dataset
-        source: Optional filter for a source author (e.g., 'Human',
-                'OpenAI'). If None, includes all sources.
-
-    Returns:
-        DataFrame with columns [key, source, T0, T1, T2, T3]
+    Note: 'source' = who wrote it (Human, OpenAI, etc.),
+          'paraphraser' = what rewrote it (chatgpt, dipper, etc.)
     """
     df = corpus.copy()
-
     if dataset:
         df = df[df["dataset"] == dataset]
     if source:
         df = df[df["source"] == source]
 
-    # Keep only original (T0) and this paraphraser's data
     mask = (df["paraphraser"] == paraphraser_key) | (df["tier"] == "T0")
     subset = df[mask].copy()
 
@@ -221,7 +130,6 @@ def get_paired_texts(corpus: pd.DataFrame, paraphraser_key: str,
         print(f"  No data for paraphraser '{paraphraser_key}'")
         return pd.DataFrame()
 
-    # Pivot: each tier becomes a column
     pivoted = subset.pivot_table(
         index=["key", "source"],
         columns="tier",
@@ -229,25 +137,16 @@ def get_paired_texts(corpus: pd.DataFrame, paraphraser_key: str,
         aggfunc="first"
     ).reset_index()
 
-    # Keep only rows that have T0
     if "T0" in pivoted.columns:
         pivoted = pivoted.dropna(subset=["T0"])
 
-    available_tiers = [c for c in ["T0", "T1", "T2", "T3"] if c in pivoted.columns]
-    print(f"  Paired texts for {paraphraser_key}: "
-          f"{len(pivoted)} docs, tiers: {available_tiers}")
+    tiers = [c for c in ["T0", "T1", "T2", "T3"] if c in pivoted.columns]
+    print(f"  Paired {paraphraser_key}: {len(pivoted)} docs, tiers: {tiers}")
     return pivoted
 
 
-def get_all_paired_texts(corpus: pd.DataFrame,
-                         dataset: str = None,
-                         source: str = None) -> dict:
-    """
-    Get paired texts for ALL paraphrasers.
-
-    Returns:
-        dict: {paraphraser_key: paired_DataFrame}
-    """
+def get_all_paired_texts(corpus, dataset=None, source=None):
+    """Get paired texts for every paraphraser. Returns dict."""
     pairs = {}
     for pkey in PARAPHRASERS:
         paired = get_paired_texts(corpus, pkey, dataset, source)
@@ -256,20 +155,9 @@ def get_all_paired_texts(corpus: pd.DataFrame,
     return pairs
 
 
-# ─────────────────────────────────────────────
-# Organize into per-dataset subdirs (optional)
-# ─────────────────────────────────────────────
-
-def organize_into_subdirs(dry_run: bool = True):
-    """
-    Copy corpus files into per-dataset subdirectories under data/raw/:
-        data/raw/xsum/xsum_paraphrased.csv
-        data/raw/xsum/xsum_train.csv
-        etc.
-    """
-    import shutil
-
-    print(f"{'[DRY RUN] ' if dry_run else ''}Organizing into subdirs...")
+def organize_into_subdirs(dry_run=True):
+    """Copy corpus files into data/raw/<dataset>/ for cleaner structure."""
+    print(f"{'[DRY RUN] ' if dry_run else ''}Organizing...")
 
     for ds in ALL_DATASETS:
         target_dir = DATA_RAW / ds
@@ -280,27 +168,17 @@ def organize_into_subdirs(dry_run: bool = True):
                                 (DATA_TRAIN, "train")]:
             src_file = src_dir / f"{ds}_{suffix}.csv"
             dest_file = target_dir / src_file.name
-
             if not src_file.exists():
-                print(f"  NOT FOUND: {src_file.name}")
                 continue
-
             if dry_run:
-                print(f"  COPY {src_file.name} -> {dest_file}")
-            else:
-                if not dest_file.exists():
-                    shutil.copy2(src_file, dest_file)
-                    print(f"  Copied: {dest_file}")
-                else:
-                    print(f"  Exists: {dest_file}")
+                print(f"  {src_file.name} -> {dest_file}")
+            elif not dest_file.exists():
+                shutil.copy2(src_file, dest_file)
+                print(f"  Copied: {dest_file}")
 
     if dry_run:
-        print("\nRun with dry_run=False to actually copy files.")
+        print("\nRun with dry_run=False to copy.")
 
-
-# ─────────────────────────────────────────────
-# Diagnostics
-# ─────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("=" * 60)
@@ -308,46 +186,28 @@ if __name__ == "__main__":
     print("=" * 60)
 
     if not DATA_CLONED.exists():
-        print(f"Cloned repo not found at: {DATA_CLONED}")
-        print(f"Run:\n  cd {DATA_RAW}")
-        print("  git clone https://github.com/tripto03/"
-              "Ship_of_theseus_paraphrased_copus.git")
+        print(f"Not found: {DATA_CLONED}")
+        print(f"cd {DATA_RAW}")
+        print("git clone https://github.com/tripto03/Ship_of_theseus_paraphrased_copus.git")
         exit(1)
 
-    print(f"\nParaphrased dir: {DATA_PARAPHRASED}")
-    print(f"  Exists: {DATA_PARAPHRASED.exists()}")
-    print(f"Train dir: {DATA_TRAIN}")
-    print(f"  Exists: {DATA_TRAIN.exists()}")
+    print(f"\nParaphrased: {DATA_PARAPHRASED} (exists: {DATA_PARAPHRASED.exists()})")
+    print(f"Train: {DATA_TRAIN} (exists: {DATA_TRAIN.exists()})")
 
-    print(f"\n{'='*60}")
-    print("DATASET OVERVIEW")
-    print("=" * 60)
-
+    print(f"\n{'='*60}\nDATASET OVERVIEW\n{'='*60}")
     for ds in ALL_DATASETS:
-        para_file = DATA_PARAPHRASED / f"{ds}_paraphrased.csv"
-        train_file = DATA_TRAIN / f"{ds}_train.csv"
-
+        para = DATA_PARAPHRASED / f"{ds}_paraphrased.csv"
+        train = DATA_TRAIN / f"{ds}_train.csv"
         print(f"\n  [{ds}]")
-        if para_file.exists():
-            df = pd.read_csv(para_file)
-            print(f"    Paraphrased: {df.shape[0]} rows, "
-                  f"{df['version_name'].nunique()} versions")
-        else:
-            print(f"    Paraphrased: NOT FOUND")
-
-        if train_file.exists():
-            df_t = pd.read_csv(train_file)
+        if para.exists():
+            df = pd.read_csv(para)
+            print(f"    Paraphrased: {df.shape[0]} rows, {df['version_name'].nunique()} versions")
+        if train.exists():
+            df_t = pd.read_csv(train)
             print(f"    Train: {df_t.shape[0]} rows")
-        else:
-            print(f"    Train: NOT FOUND")
 
-    # Show version mapping
-    print(f"\n{'='*60}")
-    print("VERSION -> TIER MAPPING")
-    print("=" * 60)
+    # Version mapping table
+    print(f"\n{'='*60}\nVERSION -> TIER MAPPING\n{'='*60}")
     sample = pd.read_csv(DATA_PARAPHRASED / f"{ALL_DATASETS[0]}_paraphrased.csv")
-    versions = sorted(sample["version_name"].unique())
-    for v in versions:
-        tier = version_to_tier(v)
-        para = version_to_paraphraser(v)
-        print(f"  {v:55s} -> {tier}  ({para})")
+    for v in sorted(sample["version_name"].unique()):
+        print(f"  {v:55s} -> {version_to_tier(v)}  ({version_to_paraphraser(v)})")

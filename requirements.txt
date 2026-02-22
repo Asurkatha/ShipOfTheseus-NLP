@@ -32,6 +32,9 @@ tqdm>=4.67.0
 # Streamlit (Phase IV)
 streamlit>=1.41.0
 
+# Data formats
+pyarrow>=14.0.0
+
 # Utilities
 python-dotenv>=1.0.0
 pyyaml>=6.0.2
