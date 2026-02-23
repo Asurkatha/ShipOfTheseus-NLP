@@ -1,10 +1,5 @@
 """
 Light preprocessing for the Ship of Theseus corpus.
-
-Unlike the Assignment 2 clean_and_tokenize (which lowercased, stripped
-punctuation, removed stopwords, and lemmatized), we preserve stylistic
-features here since RQ1-RQ3 depend on them. Aggressive tokenization
-belongs in src/features/ where specific features need it.
 """
 
 import re
