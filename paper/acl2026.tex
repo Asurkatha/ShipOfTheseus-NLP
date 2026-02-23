@@ -1,0 +1,50 @@
+\documentclass[sigconf]{acmart}
+
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\acmConference[NLP 2026]{NLP Course Project}{Spring 2026}{Northeastern University}
+\acmYear{2026}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+\title{Ship of Theseus: Computational Forensics and the Paradox of Authorial Identity}
+
+\author{Rohan Joshi}
+\email{joshi.rohan@northeastern.edu}
+\affiliation{%
+  \institution{Northeastern University}
+  \city{Seattle}
+  \state{Washington}
+  \country{USA}
+}
+
+\author{Aarav Surkatha}
+\email{surkatha.aarav@northeastern.edu}
+\affiliation{%
+  \institution{Northeastern University}
+  \city{Seattle}
+  \state{Washington}
+  \country{USA}
+}
+
+\begin{document}
+
+\begin{abstract}
+When you paraphrase a text multiple times using language models, the writing gradually stops sounding like the original author. This project investigates how authorial identity decays through iterative paraphrasing using the Ship of Theseus Corpus, which contains texts paraphrased across four generations ($T_0 \rightarrow T_3$) by seven paraphraser variants across four model families. We explore which linguistic features disappear fastest, identify the critical ``point of no return'' for authorship attribution, and detect model-specific fingerprints in paraphrased text. Our initial results confirm that semantic meaning is preserved (BERTScore 0.80--0.98) while lexical surface features are systematically replaced (BLEU as low as 0.002), with the sharpest decay occurring at the first iteration. Our work has implications for plagiarism detection, AI-generated content identification, and understanding the boundary between human and machine authorship.
+\end{abstract}
+
+\maketitle
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/dataset}
+\input{sections/experiments}
+\input{sections/plan_next}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}

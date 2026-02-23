@@ -1,0 +1,9 @@
+\section{Plan for Next}
+
+In the coming weeks, we will pursue three directions:
+
+\textbf{Stylometric feature extraction (Weeks 7--8):} We will extract at least five structural features per document: POS tag frequency distributions, sentence length variance, dependency tree depth, punctuation patterns, and Type-Token Ratio. These will be normalized relative to $T_0$ and ranked by decay rate to determine which linguistic ``planks'' are replaced first (RQ1).
+
+\textbf{Authorship attribution (Weeks 9--10):} We will train classifiers (Logistic Regression, SVM) exclusively on $T_0$ data and evaluate on $T_1$--$T_3$ to identify the ``point of no return'' where attribution accuracy collapses (RQ2). Training and testing will never use the same paraphrase level.
+
+\textbf{Paraphraser identification (Weeks 11--12):} Building on the fingerprint evidence from our baseline analysis, we will train multi-class classifiers to distinguish which paraphraser was used. Evaluation will include confusion matrices and feature importance analysis (RQ3).

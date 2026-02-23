@@ -1,0 +1,105 @@
+\section{Experimentation and Results}
+
+Our initial experiments establish baseline measurements of how text changes across paraphrase iterations. We focus on two analyses: (1) lexical vs.\ semantic similarity decay, and (2) exploratory analysis of stylistic feature shifts.
+
+\subsection{Similarity Baselines}
+
+We computed three similarity metrics between each original text $T_0$ and its paraphrased versions $T_1$, $T_2$, $T_3$ across all seven paraphraser variants:
+
+\begin{itemize}
+    \item \textbf{BLEU} \cite{papineni2002bleu}: Sentence-level smoothed n-gram precision. A lexical metric measuring surface word overlap.
+    \item \textbf{ROUGE-L} \cite{lin2004rouge}: Longest common subsequence F1 score. Also lexical, capturing sequential word preservation.
+    \item \textbf{BERTScore} \cite{zhang2020bertscore}: Contextual embedding similarity using RoBERTa-large. A semantic metric capturing meaning preservation beyond surface words.
+\end{itemize}
+
+We emphasize that BLEU and ROUGE are purely lexical metrics. They measure how many words survive paraphrasing, not whether meaning is preserved. BERTScore addresses this gap by comparing texts in embedding space.
+
+Table~\ref{tab:baselines} presents the results. Figure~\ref{fig:decay} visualizes the aggregate decay pattern.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llccc}
+\toprule
+\textbf{Paraphraser} & \textbf{Metric} & \textbf{T1} & \textbf{T2} & \textbf{T3} \\
+\midrule
+\multirow{3}{*}{ChatGPT} & BLEU & .195 & .172 & .143 \\
+ & ROUGE-L & .503 & .464 & .426 \\
+ & BERTScore & .923 & .915 & .907 \\
+\midrule
+\multirow{3}{*}{PaLM2} & BLEU & .470 & .383 & .338 \\
+ & ROUGE-L & .698 & .625 & .584 \\
+ & BERTScore & .953 & .943 & .938 \\
+\midrule
+\multirow{3}{*}{Dipper} & BLEU & .168 & .093 & .061 \\
+ & ROUGE-L & .377 & .317 & .257 \\
+ & BERTScore & .905 & .888 & .877 \\
+\midrule
+\multirow{3}{*}{Dipper (High)} & BLEU & .010 & .004 & .002 \\
+ & ROUGE-L & .130 & .107 & .091 \\
+ & BERTScore & .806 & .804 & .803 \\
+\midrule
+\multirow{3}{*}{Dipper (Low)} & BLEU & .492 & .369 & .304 \\
+ & ROUGE-L & .716 & .628 & .565 \\
+ & BERTScore & .953 & .940 & .932 \\
+\midrule
+\multirow{3}{*}{Pegasus (Full)} & BLEU & .415 & .297 & .252 \\
+ & ROUGE-L & .673 & .588 & .540 \\
+ & BERTScore & .931 & .914 & .906 \\
+\midrule
+\multirow{3}{*}{Pegasus (Slight)} & BLEU & .841 & .728 & .638 \\
+ & ROUGE-L & .919 & .857 & .804 \\
+ & BERTScore & .980 & .967 & .956 \\
+\bottomrule
+\end{tabular}
+\caption{Similarity between $T_0$ and $T_n$ across paraphrasers. BLEU and ROUGE-L are lexical; BERTScore is semantic. All values are means across the full corpus.}
+\label{tab:baselines}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/aggregate_style_vs_content.png}
+\caption{Aggregate style vs.\ content decay across all paraphrasers. BERTScore (semantic) remains above 0.80 while BLEU (lexical) drops below 0.40 by $T_1$. The widening gap confirms that meaning survives while surface features are replaced.}
+\label{fig:decay}
+\end{figure}
+
+\textbf{Key finding:} Across all paraphrasers, BERTScore remains between 0.80--0.98, while BLEU drops as low as 0.002. This confirms our core hypothesis: semantic meaning (the ``hull'') is preserved while lexical surface features (the ``planks'') are systematically replaced.
+
+The sharpest decay occurs at $T_1$. For ChatGPT, BLEU drops 81\% from $T_0$ to $T_1$ but only an additional 5\% from $T_1$ to $T_3$. This suggests the first paraphrase iteration causes the most damage to authorial identity, with diminishing changes thereafter.
+
+\subsection{Per-Family Decay Analysis}
+
+Figure~\ref{fig:family_decay} breaks down the decay pattern by paraphraser family, revealing substantial variation in how aggressively each model transforms text.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/linguistic_delta_by_family.png}
+\caption{Decay curves by paraphraser family. Dipper variants (bottom left) show the widest internal spread: Dipper (High) reaches near-zero BLEU at $T_1$ while Dipper (Low) retains 0.49. Pegasus variants (bottom right) show similar divergence between Full and Slight modes. Within-family variation exceeds between-family variation, providing early evidence for RQ3.}
+\label{fig:family_decay}
+\end{figure}
+
+The paraphraser aggressiveness ranking, consistent across all three metrics from most conservative to most aggressive, is: Pegasus (Slight) $>$ Dipper (Low) $\approx$ PaLM2 $>$ Pegasus (Full) $>$ ChatGPT $>$ Dipper $>$ Dipper (High). Notably, the spread within the Dipper family (BLEU range 0.002--0.492 at $T_1$) is wider than the spread between entirely different model families. This is strong preliminary evidence for RQ3: paraphraser configurations leave distinct, identifiable fingerprints.
+
+\subsection{Exploratory Analysis}
+
+Beyond similarity metrics, we analyzed how text characteristics shift across tiers.
+
+\textbf{Text shortening:} Average word count decreases monotonically from 279 ($T_0$) to 221 ($T_1$) to 198 ($T_2$) to 184 ($T_3$). Figure~\ref{fig:length_ratio} shows the $T_3$/$T_0$ word count ratio for each dataset--paraphraser combination. Dipper (High) and PaLM2 produce the most aggressive compression (ratios as low as 0.27 and 0.34), while Pegasus (Slight) and Dipper (Low) preserve length best (0.82--0.90). The pattern is consistent across all seven datasets, though sci\_gen is most affected by Dipper (High) (ratio 0.27).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/t3_t0_length_ratio_heatmap.png}
+\caption{$T_3$/$T_0$ word count ratio by dataset and paraphraser. Green indicates similar length to the original; red indicates significant compression. Dipper (High) and PaLM2 consistently compress text across all datasets, while Pegasus (Slight) preserves length.}
+\label{fig:length_ratio}
+\end{figure}
+
+\textbf{Punctuation erosion:} Figure~\ref{fig:punctuation} shows that expressive punctuation marks decay monotonically across tiers. Exclamation marks decrease by approximately 63\% from $T_0$ to $T_3$, semicolons by 36\%, and question marks by 35\%. Commas are the most resilient, declining only 18\%. This monotonic decay of stylistic markers, while semantic content is preserved (as shown by BERTScore), directly supports the Ship of Theseus analogy: the structural ``planks'' of writing style are being replaced one by one.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/punctuation_by_tier.png}
+\caption{Average punctuation mark counts per document across tiers. All four punctuation types show monotonic decay from $T_0$ to $T_3$, with exclamation marks decaying fastest (63\%) and commas being most resilient (18\%).}
+\label{fig:punctuation}
+\end{figure}
+
+\textbf{Vocabulary shift:} Examining the top 20 words in Yelp reviews before and after three ChatGPT paraphrase iterations reveals a shift from informal, personal language (``you'', ``very'', ``great'', ``really'') to formal, generic register (``however'', ``despite'', ``experience'', ``recommend''). This is direct evidence of what we term \emph{style laundering}: personal voice is systematically replaced by a generic LLM register while topical content (``food'', ``service'', ``place'') persists.
