@@ -12,9 +12,9 @@ Corpus structure:
 import shutil
 import pandas as pd
 from src.utils.config import (
-    DATA_RAW, DATA_CLONED, DATA_PARAPHRASED, DATA_TRAIN,
+    DATA_RAW, DATA_CLONED, DATA_PARAPHRASED, DATA_TRAIN, DATA_PROCESSED,
     ALL_DATASETS, PARAPHRASERS, MAX_SAMPLES_PER_SUBSET,
-    version_to_tier, version_to_paraphraser,
+    VERSION_TO_COL, parse_version, version_to_tier, version_to_paraphraser,
 )
 
 
@@ -153,6 +153,80 @@ def get_all_paired_texts(corpus, dataset=None, source=None):
         if len(paired) > 0:
             pairs[pkey] = paired
     return pairs
+
+
+def load_paired_t1(datasets=None, cache=True):
+    """
+    Load the forensic-audit pivot: one row per (key, source, dataset)
+    with T0 and five T1 paraphraser columns.
+
+    Normalises the 'orignal' typo, filters to target version strings,
+    pivots, and drops rows missing required columns. Caches to pickle.
+    """
+    cache_path = DATA_PROCESSED / "paired_all.pkl"
+    if cache and cache_path.exists():
+        paired = pd.read_pickle(cache_path)
+        print(f"Loaded cached pivot: {paired.shape} from {cache_path}")
+        return paired
+
+    datasets = datasets or ALL_DATASETS
+    text_cols = list(VERSION_TO_COL.values())
+
+    # Load & concatenate
+    dfs = []
+    for ds in datasets:
+        fpath = DATA_PARAPHRASED / f"{ds}_paraphrased.csv"
+        if not fpath.exists():
+            print(f"  SKIP: {fpath}")
+            continue
+        df = pd.read_csv(fpath)
+        df["dataset"] = ds
+        dfs.append(df)
+        print(f"  {ds}: {len(df):>6,} rows, {df['version_name'].nunique()} versions")
+
+    if not dfs:
+        raise RuntimeError(f"No datasets loaded. Check {DATA_PARAPHRASED}")
+    corpus = pd.concat(dfs, ignore_index=True)
+
+    # Normalise known typo
+    typo_count = (corpus["version_name"] == "orignal").sum()
+    corpus["version_name"] = corpus["version_name"].replace("orignal", "original")
+    print(f"\nTotal corpus: {len(corpus):,} rows  ('orignal' typos fixed: {typo_count})")
+
+    # Verify parser against all unique version strings
+    print(f"\n{'version_name':<55} {'base_token':<20} {'tier'}")
+    print("-" * 80)
+    for v in sorted(corpus["version_name"].unique()):
+        base, n = parse_version(v)
+        tier = "T0" if base == "original" else f"T{n}"
+        print(f"{v:<55} {base:<20} {tier}")
+
+    # Filter & pivot
+    subset = corpus[corpus["version_name"].isin(VERSION_TO_COL)].copy()
+    subset["col_name"] = subset["version_name"].map(VERSION_TO_COL)
+
+    paired = subset.pivot_table(
+        index=["key", "source", "dataset"],
+        columns="col_name",
+        values="text",
+        aggfunc="first",
+    )
+    paired.columns.name = None
+    paired = paired.reset_index()
+
+    print(f"\nShape before dropna: {paired.shape}")
+    print(f"NaN counts:\n{paired[text_cols].isna().sum().to_string()}")
+
+    required = ["text_T0", "text_chatgpt", "text_dipper_high", "text_pegasus_slight"]
+    paired = paired.dropna(subset=required)
+    print(f"Shape after dropna:  {paired.shape}")
+
+    if cache:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        paired.to_pickle(cache_path)
+        print(f"Cached to {cache_path} ({cache_path.stat().st_size / 1e6:.1f} MB)")
+
+    return paired
 
 
 def organize_into_subdirs(dry_run=True):

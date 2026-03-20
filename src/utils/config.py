@@ -3,6 +3,7 @@ Central config for the Ship of Theseus NLP project.
 Paths, constants, paraphraser definitions, color palettes.
 """
 
+import re
 from pathlib import Path
 
 # Paths
@@ -81,19 +82,54 @@ PARAPHRASER_FAMILIES = {
 }
 
 
+# Version string → column name mapping for the T1 forensic pivot
+VERSION_TO_COL = {
+    "original":        "text_T0",
+    "chatgpt":         "text_chatgpt",
+    "dipper(high)":    "text_dipper_high",
+    "dipper(low)":     "text_dipper_low",
+    "pegasus(slight)": "text_pegasus_slight",
+    "pegasus(full)":   "text_pegasus_full",
+}
+
+# Regex finds the shortest repeating base token without naive underscore splitting.
+# Correctly handles parenthesised tokens like dipper(low)_dipper(low).
+_BASE_RE = re.compile(r"(.+?)(?:_\1)*$")
+
+
+def parse_version(version_str):
+    """Return (base_token, repetition_count) for a version string.
+
+    >>> parse_version("chatgpt_chatgpt_chatgpt")
+    ('chatgpt', 3)
+    >>> parse_version("dipper(low)_dipper(low)")
+    ('dipper(low)', 2)
+    >>> parse_version("original")
+    ('original', 0)
+    """
+    if version_str in ("original", "orignal"):
+        return ("original", 0)
+    m = _BASE_RE.fullmatch(version_str)
+    if not m:
+        raise ValueError(f"Cannot parse version: '{version_str}'")
+    base = m.group(1)
+    count = (len(version_str) + 1) // (len(base) + 1)
+    return (base, count)
+
+
 def version_to_tier(version_str):
     """'original' -> T0, 'chatgpt' -> T1, 'chatgpt_chatgpt' -> T2, etc."""
-    if version_str == "original":
+    base, n = parse_version(version_str)
+    if base == "original":
         return "T0"
-    # Simple split works -- none of the base tokens have internal underscores
-    return f"T{len(version_str.split('_'))}"
+    return f"T{n}"
 
 
 def version_to_paraphraser(version_str):
     """'chatgpt_chatgpt' -> 'chatgpt', 'dipper(low)_dipper(low)' -> 'dipper(low)'."""
-    if version_str == "original":
+    base, _ = parse_version(version_str)
+    if base == "original":
         return "original"
-    base = version_str.split("_")[0].lower()
     for key, info in PARAPHRASERS.items():
         if info["base_token"] == base:
             return key
