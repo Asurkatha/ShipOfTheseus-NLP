@@ -1,0 +1,11 @@
+\section{Limitations}
+
+\textbf{Dataset scope.} Our analysis uses a single corpus (Ship of Theseus) with seven English-language datasets. Results may not generalize to other languages, longer documents, or domain-specific texts (e.g., legal or medical). The corpus also uses a fixed set of paraphrasing models available at the time of its creation; newer models (e.g., GPT-4, Claude) may exhibit different decay patterns.
+
+\textbf{T1-focused intensity comparison.} While we extended POS and NER analysis across $T_1$--$T_3$ (Section~5.10), the controlled intensity experiment (5.8$\times$ sensitivity ratio) compares Dipper Low vs.\ High at $T_1$ only. The sensitivity ratio may differ at deeper paraphrase levels, though our multi-tier results suggest the layered erosion pattern is consistent.
+
+\textbf{NER model limitations.} We use spaCy's \texttt{en\_core\_web\_sm} for both POS tagging and NER extraction. This is a relatively small model; larger models or transformer-based NER systems might yield different entity sets, particularly for ambiguous or domain-specific entities. Our lowercase string matching for entity comparison may also miss partial matches (e.g., ``President Biden'' vs.\ ``Biden'').
+
+\textbf{Cosine as a summary statistic.} POS cosine similarity collapses 17-dimensional information into a single scalar. Two texts could have the same cosine similarity to $T_0$ but differ in which specific tags shifted. Our heatmap analysis partially addresses this, but per-tag analysis across all paraphrasers and datasets remains an area for deeper investigation.
+
+\textbf{No attribution models yet.} We have characterized feature decay but have not yet trained authorship attribution classifiers (RQ2) or paraphraser identification models (RQ3). The forensic fingerprints we identify are based on descriptive statistics; their discriminative power in a classification setting remains to be tested.

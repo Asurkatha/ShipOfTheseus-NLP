@@ -1,0 +1,33 @@
+\section{Analysis \& Discussion}
+
+\subsection{Why Content Decays Faster Than Style}
+
+Our central finding---that named entities decay 5.8$\times$ faster than POS distributions when paraphrasing intensity increases---has a straightforward mechanistic explanation. POS distributions are \emph{statistical aggregates}: they summarize the proportion of nouns, verbs, adjectives, etc.\ across an entire document. Even aggressive paraphrasing that restructures every sentence tends to produce text with broadly similar grammatical composition. A noun phrase may be rephrased, but it typically remains a noun phrase.
+
+Named entities, by contrast, are \emph{specific lexical items}---proper nouns, dates, and organizations that must be reproduced exactly to count as preserved. Even minor reformulations (``New York City'' $\rightarrow$ ``NYC'' $\rightarrow$ ``the city'') count as entity loss under our string-matching criterion. This granularity makes NER a much more sensitive probe of text transformation than distributional metrics.
+
+The POS tag delta heatmap reveals which specific tags drive the aggregate cosine shift. NOUN and PUNCT show the largest absolute changes under Dipper (High), consistent with text compression (shorter sentences, fewer proper nouns). Notably, PROPN (proper nouns) decreases across nearly all paraphrasers, aligning with the entity dropping we observe in the NER analysis.
+
+Crucially, our multi-tier analysis (Section~5.10) confirms that this pattern is not an artifact of the first iteration. The ordering BERTScore $>$ POS cosine $>$ NER Recall $>$ ROUGE-L $>$ BLEU holds at every tier from $T_1$ through $T_3$, with no feature type ``catching up'' to another. Erosion rates are intrinsic to the feature type: aggregate distributional metrics (POS, BERTScore) are inherently more robust than point-specific features (named entities, exact n-grams).
+
+\subsection{Paraphraser Fingerprints Are Multi-Dimensional}
+
+The style-vs-content scatter plot (Figure~\ref{fig:fingerprints}) reveals that a single metric is insufficient to distinguish all paraphrasers. Pegasus (Full) and Dipper (Default) cluster at nearly identical POS cosine ($\approx$0.963), but their NER profiles diverge sharply: Pegasus drops entities but rarely introduces novel ones (Precision 0.846), while Dipper Default both drops and introduces entities (Precision 0.537). This suggests that effective paraphraser identification (RQ3) will require \emph{multi-signal} classifiers combining syntactic, lexical, and entity-level features.
+
+\subsection{Implications for Forensic Applications}
+
+Our findings have direct practical implications. First, plagiarism detection systems that rely solely on lexical overlap (e.g., n-gram matching) will fail after a single paraphrase iteration---BLEU drops 81\% at $T_1$ for ChatGPT. However, systems that incorporate POS distributions may remain effective longer, since grammatical structure persists even under aggressive paraphrasing (Dipper High retains 0.843 POS cosine at $T_3$).
+
+Second, the layered erosion pattern suggests a defense-in-depth strategy for forensic analysis: check lexical overlap first (fast but fragile), then entity preservation (moderate sensitivity), then syntactic structure (most robust). Each layer provides evidence at a different sensitivity level, and the combination may enable reliable detection even after multiple paraphrase iterations.
+
+Third, the finding that paraphrasers leave distinct multi-dimensional fingerprints is encouraging for RQ3. If different paraphrasers produce separable patterns in POS $\times$ NER $\times$ BERTScore space, classifiers trained on these features may be able to identify \emph{which} paraphraser was used, not just \emph{whether} paraphrasing occurred.
+
+\subsection{The Ship of Theseus Revisited}
+
+Returning to our framing metaphor: the grammatical skeleton (hull) of the ship is remarkably durable---even the most aggressive paraphraser retains 88\% cosine similarity in POS distribution at $T_1$, declining only to 84\% by $T_3$. The named entities (cargo) are jettisoned first and most dramatically. The lexical planks (individual words, measured by BLEU) are replaced almost entirely at the first iteration. Yet the ship's meaning (measured by BERTScore) persists throughout.
+
+This layered erosion---lexical planks first, then entity cargo, with grammatical hull and semantic meaning largely intact---suggests that authorial identity is not a single property but a composite of features with different resilience profiles.
+
+\subsection{Source Author Effects}
+
+The finding that human-authored texts show slightly less POS drift than LLM-generated texts, while counterintuitive, is consistent with the observation that six distinct LLM architectures produce syntactically heterogeneous $T_0$ texts. A single paraphraser normalizes these diverse inputs toward its own syntactic template, producing measurable POS shifts. Human writing, being more syntactically conventional, offers less room for restructuring. This has a practical implication: paraphrasing detectors may perform differently on human-authored vs.\ LLM-authored source texts, and evaluation benchmarks should account for this asymmetry.

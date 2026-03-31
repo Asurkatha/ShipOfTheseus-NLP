@@ -86,6 +86,8 @@ PARAPHRASER_FAMILIES = {
 VERSION_TO_COL = {
     "original":        "text_T0",
     "chatgpt":         "text_chatgpt",
+    "palm":            "text_palm",
+    "dipper":          "text_dipper",
     "dipper(high)":    "text_dipper_high",
     "dipper(low)":     "text_dipper_low",
     "pegasus(slight)": "text_pegasus_slight",

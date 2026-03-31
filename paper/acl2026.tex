@@ -22,7 +22,7 @@
 }
 
 \author{Aarav Surkatha}
-\email{surkatha.aarav@northeastern.edu}
+\email{surkatha.a@northeastern.edu}
 \affiliation{%
   \institution{Northeastern University}
   \city{Seattle}
@@ -33,7 +33,7 @@
 \begin{document}
 
 \begin{abstract}
-When you paraphrase a text multiple times using language models, the writing gradually stops sounding like the original author. This project investigates how authorial identity decays through iterative paraphrasing using the Ship of Theseus Corpus, which contains texts paraphrased across four generations ($T_0 \rightarrow T_3$) by seven paraphraser variants across four model families. We explore which linguistic features disappear fastest, identify the critical ``point of no return'' for authorship attribution, and detect model-specific fingerprints in paraphrased text. Our initial results confirm that semantic meaning is preserved (BERTScore 0.80--0.98) while lexical surface features are systematically replaced (BLEU as low as 0.002), with the sharpest decay occurring at the first iteration. Our work has implications for plagiarism detection, AI-generated content identification, and understanding the boundary between human and machine authorship.
+Large language models can iteratively paraphrase text while preserving semantic meaning, but it remains unclear how quickly and in what order authorial identity decays across paraphrase generations. We investigate this question using the Ship of Theseus Paraphrased Corpus, which contains texts paraphrased across four generations ($T_0 \rightarrow T_3$) by seven paraphraser variants spanning four model families. Combining lexical similarity metrics (BLEU, ROUGE-L), semantic similarity (BERTScore), POS tag distributions, and named entity recognition, we find that content-bearing features (named entities) decay 5.8$\times$ faster than stylistic features (POS distributions) as paraphrasing intensity increases. Semantic meaning is preserved (BERTScore 0.80--0.98) even as lexical surface features collapse (BLEU as low as 0.002), and named entities are predominantly \emph{dropped} rather than replaced by novel entities. Each paraphraser occupies a distinct position in the style-vs-content preservation space, with paraphraser configuration mattering more than model architecture. These findings have implications for plagiarism detection, AI-generated content identification, and computational forensics of authorial identity.
 \end{abstract}
 
 \maketitle
@@ -41,8 +41,12 @@ When you paraphrase a text multiple times using language models, the writing gra
 \input{sections/introduction}
 \input{sections/related_work}
 \input{sections/dataset}
+\input{sections/methodology}
 \input{sections/experiments}
-\input{sections/plan_next}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/conclusion}
+\input{sections/code_repository}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}

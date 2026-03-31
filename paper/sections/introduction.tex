@@ -1,5 +1,29 @@
-\section{Problem Description}
+\section{Introduction}
 
-When you paraphrase a text multiple times using language models, something interesting happens: the writing gradually stops sounding like the original author. This project investigates exactly how this transformation occurs using the Ship of Theseus Corpus, which contains texts paraphrased through multiple iterations ($T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_3$) by four different model families (ChatGPT, PaLM2, Pegasus, and Dipper). Like the philosophical paradox where replacing every plank of a ship raises the question of whether it is still the same ship, we examine when repeatedly paraphrased text loses its connection to the original author.
+\subsection{Motivation}
 
-We explore three central questions: First, which linguistic features disappear fastest -- do stylistic markers like sentence structure and word choice vanish before semantic meaning, or vice versa? Second, is there a critical ``point of no return'' where authorship attribution suddenly fails, or does identity fade gradually across iterations? Third, can we identify which paraphrasing model was used by detecting model-specific patterns left behind in the text? Understanding these dynamics has real implications for detecting plagiarism, identifying AI-rewritten content, tracing misinformation sources, and understanding the fundamental boundary between human and machine authorship.
+The proliferation of large language models has made text paraphrasing trivially accessible. A student submitting coursework, a content farm scaling production, or a disinformation operator laundering provenance can each iteratively paraphrase a document through multiple LLMs, producing text that retains the original meaning while evading plagiarism detectors and authorship attribution systems. This creates urgent challenges for academic integrity, forensic linguistics, and AI transparency: if an LLM can rewrite text until no trace of the original author remains, traditional authorship verification collapses.
+
+The threat is not hypothetical. Recent work has shown that neural paraphrasers can evade state-of-the-art AI text detectors \cite{krishna2024dipper}, and that iterative rewriting compounds the evasion effect. Yet most detection research treats paraphrasing as a single-step perturbation, measuring whether a classifier can still identify machine-generated text after one rewrite. The more fundamental question---how authorial identity \emph{decays} across multiple generations of paraphrasing, and which specific linguistic features erode first---remains largely unexplored.
+
+\subsection{Conceptual Framing}
+
+We frame this problem through the Ship of Theseus paradox: if you replace every plank of a ship one by one, is the result still the same ship? Analogously, if an LLM replaces every word, restructures every sentence, and sheds every proper noun while preserving the original meaning, is the result still the original author's work? We map the philosophical framework onto measurable NLP signals: \emph{lexical planks} (individual words, measured by BLEU), \emph{structural hull} (grammatical patterns, measured by POS tag distributions), \emph{entity cargo} (factual anchors, measured by NER), and \emph{semantic meaning} (measured by BERTScore). This mapping allows us to quantify which ``planks'' are replaced first and at what rate.
+
+\subsection{Research Gap}
+
+Prior work on authorship attribution under adversarial conditions \cite{koppel2011authorship} demonstrates that paraphrasing degrades attribution accuracy, but does not quantify the \emph{rate} or \emph{order} of feature decay across iterations. Work on AI text detection \cite{mitchell2023detectgpt} focuses on binary classification (human vs.\ machine) rather than measuring how iterative rewriting erodes specific linguistic features at different rates. Neural paraphrase typologies \cite{krishna2023paraphrase} characterize the \emph{types} of changes paraphrasers make, but do not track how those changes accumulate across multiple generations.
+
+Our work fills this gap by providing a multi-signal, multi-iteration forensic analysis that measures \emph{which} features decay, \emph{how fast}, and \emph{whether different paraphrasers leave identifiable signatures}.
+
+\subsection{Research Questions}
+
+We investigate three questions using the Ship of Theseus Paraphrased Corpus \cite{tripto2024ship}:
+
+\begin{itemize}
+    \item \textbf{RQ1:} Which linguistic features decay first---style (POS distributions, punctuation) or content (named entities, factual anchors)?
+    \item \textbf{RQ2:} At what paraphrase iteration does authorship attribution effectively fail? (\emph{Addressed in future work; we characterize the feature landscape that attribution models will operate on.})
+    \item \textbf{RQ3:} Do different paraphrasing models leave identifiable forensic fingerprints?
+\end{itemize}
+
+\textbf{Contributions.} We present a multi-signal forensic analysis combining lexical metrics (BLEU, ROUGE-L), semantic metrics (BERTScore), stylometric features (POS tag distributions), and content features (NER entity preservation) across seven paraphraser variants, seven diverse datasets, and three paraphrase iterations. We find that (1) different feature types exhibit \emph{layered erosion}, with lexical surface vanishing first, entities next, and grammatical structure last; (2) content features (named entities) are 5.8$\times$ more sensitive to paraphrasing intensity than stylistic features (POS distributions); (3) entities are predominantly \emph{dropped} rather than replaced by novel entities; and (4) each paraphraser occupies a distinct position in the style-vs-content preservation space, with paraphraser configuration mattering more than model architecture.

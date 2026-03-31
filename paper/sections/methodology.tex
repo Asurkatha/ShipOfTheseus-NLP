@@ -1,0 +1,45 @@
+\section{Methodology}
+
+Our forensic analysis combines three complementary feature families---lexical, stylometric, and semantic---to measure how authorial identity decays across paraphrase iterations. Each family captures a different facet of the text: surface word overlap, grammatical structure, and meaning preservation. We deliberately choose metrics at different levels of linguistic abstraction, from exact n-gram matching (most sensitive to any change) to contextual embeddings (most robust to rephrasing), so that the relative decay rates reveal which levels of linguistic representation are most fragile.
+
+\subsection{Feature Extraction}
+
+\textbf{Stylometric features.} We extract Part-of-Speech (POS) tag distributions using spaCy \cite{honnibal2020spacy} (\texttt{en\_core\_web\_sm} model). For each text, we count occurrences of all 17 Universal POS (UPOS) tags and normalize to proportions, yielding a 17-dimensional vector where each dimension represents the fraction of tokens belonging to that tag (e.g., NOUN, VERB, ADJ, PROPN). This captures the syntactic ``skeleton'' of a text independent of specific word choices. We choose proportions rather than raw counts so that texts of different lengths are directly comparable; the resulting vectors always sum to approximately 1.0.
+
+We also extract named entity sets using spaCy's NER pipeline. For each text, we collect all named entity strings (PERSON, ORG, GPE, DATE, etc.), lowercase them to avoid spurious case mismatches (e.g., ``New York'' vs.\ ``new york''), and store them as sets. Named entities represent factual anchors---the semantic ``cargo'' of a document---and their survival through paraphrasing measures content preservation at a finer granularity than embedding-based metrics. Unlike distributional features such as POS proportions, entity preservation requires \emph{exact} lexical reproduction, making it a much more sensitive probe of text transformation.
+
+Additionally, we extract dependency tree depth using spaCy's dependency parser. For each sentence, we compute the maximum depth from root to leaf in the dependency tree, then average across all sentences in the document. This measures syntactic complexity: deep trees indicate complex subordination, while shallow trees indicate simpler sentence structures.
+
+\textbf{Lexical metrics.} We compute BLEU \cite{papineni2002bleu} (sentence-level smoothed n-gram precision) and ROUGE-L \cite{lin2004rouge} (longest common subsequence F1) between $T_0$ and each paraphrased version. These measure surface word overlap and sequential preservation respectively. We emphasize that these are purely lexical metrics: a BLEU of 0.0 does not mean the text has lost its meaning, only that the specific words have been replaced.
+
+\textbf{Semantic metrics.} We compute BERTScore \cite{zhang2020bertscore} using DeBERTa-xlarge-MNLI, which compares texts in contextual embedding space. High BERTScore with low BLEU indicates that meaning is preserved despite complete lexical replacement---the signature of successful paraphrasing.
+
+\subsection{Similarity Analysis (RQ1)}
+
+To measure style vs.\ content decay, we employ two complementary signals at the structural level:
+
+\textbf{POS cosine similarity:} For each article, we compute the cosine similarity between the $T_0$ POS proportion vector and the corresponding $T_n$ vector ($n \in \{1,2,3\}$). Cosine similarity is appropriate because POS vectors are compositional proportions: we care about the \emph{direction} (relative tag distribution) rather than the magnitude. A score near 1.0 indicates the grammatical distribution is unchanged; lower scores indicate syntactic restructuring. We report mean $\pm$ standard deviation across all articles, broken down by dataset and paraphraser.
+
+\textbf{NER entity metrics:} For each article, we compute three set-based metrics between $T_0$ and $T_n$ entity sets:
+\begin{itemize}
+    \item \textbf{Jaccard similarity} $J = |A \cap B| / |A \cup B|$: overall entity overlap.
+    \item \textbf{Recall} $R = |A \cap B| / |A|$: fraction of original entities retained (low $R$ = entity dropping).
+    \item \textbf{Precision} $P = |A \cap B| / |B|$: fraction of $T_n$ entities that existed in $T_0$ (low $P$ = novel entity introduction).
+\end{itemize}
+Separating Recall and Precision is critical because dropping and novel introduction are distinct phenomena with different implications: dropping indicates lossy compression, while novel introduction indicates the paraphraser is substituting entities. Articles where $T_0$ contains zero entities are excluded from means to avoid undefined metrics.
+
+\subsection{Controlled Experiments}
+
+We design two controlled comparisons to isolate specific variables, holding all other factors constant:
+
+\textbf{Dipper intensity experiment:} Dipper \cite{krishna2024dipper} offers Low and High intensity settings with identical architecture. Comparing POS cosine and NER Recall between these two settings on the same articles isolates the effect of paraphrasing aggressiveness on style vs.\ content, directly addressing RQ1. The key question: does increasing the intensity dial affect both feature types equally, or is one more sensitive?
+
+\textbf{Pegasus coverage experiment:} Pegasus (Slight) \cite{zhang2020pegasus} paraphrases 25\% of sentences; Pegasus (Full) paraphrases all sentences. Same model, same random seed, different coverage. This isolates the effect of paraphrase breadth on entity dropping vs.\ novel introduction, testing whether broader coverage primarily causes entities to be lost or to be replaced with new ones.
+
+\textbf{Source author comparison:} We split the corpus by whether $T_0$ was authored by a human or one of six LLMs (OpenAI, LLAMA, Tsinghua, BigScience, PaLM, Eleuther-AI), then compare POS drift across both groups. This tests whether the original author's identity---specifically, the syntactic patterns characteristic of human vs.\ LLM writing---affects how much restructuring the paraphraser introduces.
+
+\subsection{Data Alignment}
+
+For the stylometric analysis, we construct a forensic pivot table: one row per (document key, source author, dataset) tuple, with columns for $T_0$ and all seven $T_1$ paraphraser variants. Version strings are parsed using a regex-based tokenizer that handles parenthesized tokens (e.g., \texttt{dipper(low)\_dipper(low)} correctly yields base token \texttt{dipper(low)} with repetition count 2, rather than splitting naively on underscores). After dropping rows with missing values across all required columns, the aligned corpus contains \textbf{18,058 article-source pairs}. POS vectors, NER entity sets, and dependency depths are extracted for all eight text columns ($T_0$ plus seven paraphrasers) and cached to disk for reproducibility.
+
+For the multi-tier analysis ($T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_3$), we construct separate pivot tables per paraphraser, aligning all four tiers by document key. This yields between 508 (PaLM2) and 3,018 (Pegasus Slight) matched article chains per paraphraser. Features are extracted at every tier, and metrics are always computed relative to $T_0$ to measure cumulative decay rather than per-step change.

@@ -105,6 +105,34 @@ def sbert_cosine(texts_a: list, texts_b: list,
     return cosines.diagonal().tolist()
 
 
+# ── Vector Similarity ──
+
+def batch_cosine_similarity(A, B):
+    """
+    Row-wise cosine similarity between two (n, d) arrays.
+
+    Returns a 1-D array of length n.  Rows where either vector is
+    all-zero produce NaN (undefined direction).
+    """
+    import numpy as np
+    from numpy.linalg import norm
+
+    A = np.asarray(A, dtype=np.float64)
+    B = np.asarray(B, dtype=np.float64)
+
+    norms_a = norm(A, axis=1)
+    norms_b = norm(B, axis=1)
+
+    zero_mask = (norms_a == 0) | (norms_b == 0)
+
+    safe_a = np.where(norms_a[:, None] == 0, 1, norms_a[:, None])
+    safe_b = np.where(norms_b[:, None] == 0, 1, norms_b[:, None])
+
+    sim = np.sum((A / safe_a) * (B / safe_b), axis=1)
+    sim[zero_mask] = np.nan
+    return sim
+
+
 # ── Feature Metrics (for Stylometry) ──
 
 def type_token_ratio(text: str) -> float:

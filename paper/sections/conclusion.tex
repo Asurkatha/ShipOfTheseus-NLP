@@ -1,0 +1,13 @@
+\section{Conclusion \& Future Work}
+
+We have conducted a multi-signal forensic audit of authorial identity decay under iterative LLM paraphrasing. Our key findings are:
+
+\begin{enumerate}
+    \item \textbf{Content decays faster than style.} Named entities (NER Recall) are 5.8$\times$ more sensitive to paraphrasing intensity than grammatical structure (POS cosine), answering RQ1. The syntactic skeleton of a document is remarkably resilient, while factual anchors are jettisoned early.
+    \item \textbf{Entities are dropped, not introduced.} Paraphrasers primarily shed named entities by rephrasing around them (Recall drops 0.329 in the Pegasus controlled experiment) rather than introducing novel entities (Precision drops only 0.122).
+    \item \textbf{Configuration trumps architecture.} The Dipper family's internal variation (POS cosine 0.984--0.878) exceeds the total variation across all other model families, and each paraphraser occupies a distinct position in the style-vs-content space, providing evidence for detectable fingerprints (RQ3).
+\end{enumerate}
+
+Returning to the Ship of Theseus: after a single paraphrase iteration, the lexical planks are replaced, the entity cargo is partially jettisoned, but the grammatical hull and semantic meaning remain largely intact. The ship sails on---but a forensic examiner can detect which planks were swapped and which shipyard did the work.
+
+\textbf{Future work.} We plan to (1) train authorship attribution classifiers on $T_0$ features and evaluate their decay across $T_1$--$T_3$ to identify the ``point of no return'' for RQ2; (2) build multi-class paraphraser identification models using POS, NER, and lexical features combined as input vectors for RQ3; (3) extend the POS and NER analysis to deeper paraphrase iterations ($T_2$, $T_3$); and (4) investigate defense mechanisms that could make authorial identity more resistant to iterative paraphrasing.

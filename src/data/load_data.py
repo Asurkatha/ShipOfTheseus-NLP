@@ -217,7 +217,8 @@ def load_paired_t1(datasets=None, cache=True):
     print(f"\nShape before dropna: {paired.shape}")
     print(f"NaN counts:\n{paired[text_cols].isna().sum().to_string()}")
 
-    required = ["text_T0", "text_chatgpt", "text_dipper_high", "text_pegasus_slight"]
+    required = ["text_T0", "text_chatgpt", "text_dipper_high", "text_pegasus_slight",
+                 "text_palm", "text_dipper"]
     paired = paired.dropna(subset=required)
     print(f"Shape after dropna:  {paired.shape}")
 
