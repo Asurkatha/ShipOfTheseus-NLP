@@ -4,7 +4,7 @@
 
 The proliferation of large language models has made text paraphrasing trivially accessible. A student submitting coursework, a content farm scaling production, or a disinformation operator laundering provenance can each iteratively paraphrase a document through multiple LLMs, producing text that retains the original meaning while evading plagiarism detectors and authorship attribution systems. This creates urgent challenges for academic integrity, forensic linguistics, and AI transparency: if an LLM can rewrite text until no trace of the original author remains, traditional authorship verification collapses.
 
-The threat is not hypothetical. Recent work has shown that neural paraphrasers can evade state-of-the-art AI text detectors \cite{krishna2024dipper}, and that iterative rewriting compounds the evasion effect. Yet most detection research treats paraphrasing as a single-step perturbation, measuring whether a classifier can still identify machine-generated text after one rewrite. The more fundamental question---how authorial identity \emph{decays} across multiple generations of paraphrasing, and which specific linguistic features erode first---remains largely unexplored.
+The threat is not hypothetical. Recent work has shown that neural paraphrasers can evade state-of-the-art AI text detectors \cite{krishna2023dipper}, and that iterative rewriting compounds the evasion effect. Yet most detection research treats paraphrasing as a single-step perturbation, measuring whether a classifier can still identify machine-generated text after one rewrite. The more fundamental question---how authorial identity \emph{decays} across multiple generations of paraphrasing, and which specific linguistic features erode first---remains largely unexplored.
 
 \subsection{Conceptual Framing}
 
@@ -12,7 +12,7 @@ We frame this problem through the Ship of Theseus paradox: if you replace every 
 
 \subsection{Research Gap}
 
-Prior work on authorship attribution under adversarial conditions \cite{koppel2011authorship} demonstrates that paraphrasing degrades attribution accuracy, but does not quantify the \emph{rate} or \emph{order} of feature decay across iterations. Work on AI text detection \cite{mitchell2023detectgpt} focuses on binary classification (human vs.\ machine) rather than measuring how iterative rewriting erodes specific linguistic features at different rates. Neural paraphrase typologies \cite{krishna2023paraphrase} characterize the \emph{types} of changes paraphrasers make, but do not track how those changes accumulate across multiple generations.
+Prior work on authorship attribution under adversarial conditions \cite{koppel2011authorship} demonstrates that paraphrasing degrades attribution accuracy, but does not quantify the \emph{rate} or \emph{order} of feature decay across iterations. Work on AI text detection \cite{mitchell2023detectgpt} focuses on binary classification (human vs.\ machine) rather than measuring how iterative rewriting erodes specific linguistic features at different rates. Neural paraphrase typologies \cite{wahle2023paraphrase} characterize the \emph{types} of changes paraphrasers make, but do not track how those changes accumulate across multiple generations.
 
 Our work fills this gap by providing a multi-signal, multi-iteration forensic analysis that measures \emph{which} features decay, \emph{how fast}, and \emph{whether different paraphrasers leave identifiable signatures}.
 

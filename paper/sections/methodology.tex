@@ -32,7 +32,7 @@ Separating Recall and Precision is critical because dropping and novel introduct
 
 We design two controlled comparisons to isolate specific variables, holding all other factors constant:
 
-\textbf{Dipper intensity experiment:} Dipper \cite{krishna2024dipper} offers Low and High intensity settings with identical architecture. Comparing POS cosine and NER Recall between these two settings on the same articles isolates the effect of paraphrasing aggressiveness on style vs.\ content, directly addressing RQ1. The key question: does increasing the intensity dial affect both feature types equally, or is one more sensitive?
+\textbf{Dipper intensity experiment:} Dipper \cite{krishna2023dipper} offers Low and High intensity settings with identical architecture. Comparing POS cosine and NER Recall between these two settings on the same articles isolates the effect of paraphrasing aggressiveness on style vs.\ content, directly addressing RQ1. The key question: does increasing the intensity dial affect both feature types equally, or is one more sensitive?
 
 \textbf{Pegasus coverage experiment:} Pegasus (Slight) \cite{zhang2020pegasus} paraphrases 25\% of sentences; Pegasus (Full) paraphrases all sentences. Same model, same random seed, different coverage. This isolates the effect of paraphrase breadth on entity dropping vs.\ novel introduction, testing whether broader coverage primarily causes entities to be lost or to be replaced with new ones.
 
