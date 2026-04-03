@@ -521,9 +521,15 @@ with tab3:
         t0_f1 = exp_results[best_clf]["T0"]["macro_f1"]
         t3_f1 = exp_results[best_clf].get("T3", {}).get("macro_f1", 0)
 
+        CLF_SHORT = {
+            "Logistic Regression": "Log. Reg.",
+            "SVM (RBF)": "SVM (RBF)",
+            "Random Forest": "Rand. Forest",
+        }
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
-            st.metric("Best Classifier", best_clf)
+            st.metric("Best Classifier", CLF_SHORT.get(best_clf, best_clf),
+                       help=best_clf)
         with mc2:
             st.metric("T0 Macro F1", f"{t0_f1:.3f}")
         with mc3:
