@@ -217,9 +217,11 @@ def load_paired_t1(datasets=None, cache=True):
     print(f"\nShape before dropna: {paired.shape}")
     print(f"NaN counts:\n{paired[text_cols].isna().sum().to_string()}")
 
-    required = ["text_T0", "text_chatgpt", "text_dipper_high", "text_pegasus_slight",
-                 "text_palm", "text_dipper"]
+    required = list(VERSION_TO_COL.values())  # All 8 columns from config
+    before_drop = len(paired)
     paired = paired.dropna(subset=required)
+    dropped = before_drop - len(paired)
+    print(f"Dropped {dropped} rows missing required columns ({before_drop} -> {len(paired)})")
     print(f"Shape after dropna:  {paired.shape}")
 
     if cache:

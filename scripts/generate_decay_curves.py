@@ -16,6 +16,8 @@ import seaborn as sns
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from src.utils.metrics import bootstrap_ci
+
 BASELINES_DIR = ROOT / "figures" / "baselines"
 STYLOMETRY_DIR = ROOT / "figures" / "stylometry"
 NER_DIR = ROOT / "figures" / "ner"
@@ -34,7 +36,7 @@ def load_data():
 
 
 def compute_aggregate_metrics(results):
-    """Compute mean metrics across all paraphrasers at each tier."""
+    """Compute mean metrics with 95% bootstrap CIs across all paraphrasers at each tier."""
     tiers = ["T1", "T2", "T3"]
     metrics = {
         "POS Cosine": {},
@@ -59,17 +61,18 @@ def compute_aggregate_metrics(results):
             if ner_r_col in df.columns:
                 ner_r_vals.extend(df[ner_r_col].dropna().tolist())
 
-            dep_t0 = f"dep_depth_T0"
+            dep_t0 = "dep_depth_T0"
             dep_ti = f"dep_depth_{tier}"
             if dep_t0 in df.columns and dep_ti in df.columns:
                 ratio = df[dep_ti] / df[dep_t0].replace(0, np.nan)
                 dep_vals.extend(ratio.dropna().tolist())
 
-        metrics["POS Cosine"][tier] = (np.mean(pos_vals), np.std(pos_vals))
-        metrics["NER Jaccard"][tier] = (np.mean(ner_j_vals), np.std(ner_j_vals))
-        metrics["NER Recall"][tier] = (np.mean(ner_r_vals), np.std(ner_r_vals))
+        # Bootstrap 95% CIs: (mean, ci_lower, ci_upper)
+        metrics["POS Cosine"][tier] = bootstrap_ci(pos_vals)
+        metrics["NER Jaccard"][tier] = bootstrap_ci(ner_j_vals)
+        metrics["NER Recall"][tier] = bootstrap_ci(ner_r_vals)
         if dep_vals:
-            metrics["Dep Depth Ratio"][tier] = (np.mean(dep_vals), np.std(dep_vals))
+            metrics["Dep Depth Ratio"][tier] = bootstrap_ci(dep_vals)
 
     return metrics
 
@@ -85,44 +88,48 @@ def plot_composite_decay(results, baselines):
     # Aggregate per-paraphraser metrics across all models
     agg = compute_aggregate_metrics(results)
 
-    # Get BLEU and BERTScore from baselines (aggregate across paraphrasers)
-    bleu_by_tier = {"T0": (1.0, 0.0)}
-    bert_by_tier = {"T0": (1.0, 0.0)}
+    # Get BLEU and BERTScore from baselines with bootstrap CIs
+    bleu_by_tier = {"T0": (1.0, 1.0, 1.0)}
+    bert_by_tier = {"T0": (1.0, 1.0, 1.0)}
     for tier in ["T1", "T2", "T3"]:
         b = baselines[baselines["Tier"] == tier]
-        bleu_by_tier[tier] = (b["BLEU"].mean(), b["BLEU"].std())
-        bert_by_tier[tier] = (b["BERTScore"].mean(), b["BERTScore"].std())
+        bleu_by_tier[tier] = bootstrap_ci(b["BLEU"].values)
+        bert_by_tier[tier] = bootstrap_ci(b["BERTScore"].values)
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
     # Plot each feature
     features = [
         ("BERTScore (Semantic)", bert_by_tier, "#2ecc71", "o", "-"),
-        ("POS Cosine (Grammar)", {**{"T0": (1.0, 0.0)}, **agg["POS Cosine"]}, "#3498db", "s", "-"),
-        ("NER Recall (Entities)", {**{"T0": (1.0, 0.0)}, **agg["NER Recall"]}, "#e74c3c", "D", "-"),
+        ("POS Cosine (Grammar)", {**{"T0": (1.0, 1.0, 1.0)}, **agg["POS Cosine"]}, "#3498db", "s", "-"),
+        ("NER Recall (Entities)", {**{"T0": (1.0, 1.0, 1.0)}, **agg["NER Recall"]}, "#e74c3c", "D", "-"),
         ("BLEU (Lexical)", bleu_by_tier, "#f39c12", "^", "--"),
         ("ROUGE-L (Lexical)", None, "#e67e22", "v", "--"),  # Computed below
     ]
 
-    # ROUGE-L from baselines
-    rouge_by_tier = {"T0": (1.0, 0.0)}
+    # ROUGE-L from baselines with bootstrap CIs
+    rouge_by_tier = {"T0": (1.0, 1.0, 1.0)}
     for tier in ["T1", "T2", "T3"]:
         b = baselines[baselines["Tier"] == tier]
-        rouge_by_tier[tier] = (b["ROUGE-L"].mean(), b["ROUGE-L"].std())
+        rouge_by_tier[tier] = bootstrap_ci(b["ROUGE-L"].values)
     features[4] = ("ROUGE-L (Lexical)", rouge_by_tier, "#e67e22", "v", "--")
 
     # Add dep depth if available
     if agg["Dep Depth Ratio"]:
         features.append(
-            ("Dep Depth Ratio", {**{"T0": (1.0, 0.0)}, **agg["Dep Depth Ratio"]}, "#9b59b6", "P", "-.")
+            ("Dep Depth Ratio", {**{"T0": (1.0, 1.0, 1.0)}, **agg["Dep Depth Ratio"]}, "#9b59b6", "P", "-.")
         )
 
+    # Plot with asymmetric 95% CI error bars
     for label, data, color, marker, ls in features:
         if data is None:
             continue
-        means = [data.get(t, (np.nan, 0))[0] for t in tiers]
-        stds = [data.get(t, (0, 0))[1] for t in tiers]
-        ax.errorbar(x, means, yerr=stds, label=label, color=color,
+        means = [data.get(t, (np.nan, np.nan, np.nan))[0] for t in tiers]
+        ci_lo = [data.get(t, (np.nan, np.nan, np.nan))[1] for t in tiers]
+        ci_hi = [data.get(t, (np.nan, np.nan, np.nan))[2] for t in tiers]
+        yerr_lower = [means[i] - ci_lo[i] for i in range(len(tiers))]
+        yerr_upper = [ci_hi[i] - means[i] for i in range(len(tiers))]
+        ax.errorbar(x, means, yerr=[yerr_lower, yerr_upper], label=label, color=color,
                     marker=marker, markersize=8, linewidth=2.5, linestyle=ls,
                     capsize=4, capthick=1.2, alpha=0.85)
 

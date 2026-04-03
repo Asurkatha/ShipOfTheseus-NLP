@@ -186,3 +186,85 @@ def compute_attribution_decay(model, X_by_tier: dict, y_by_tier: dict) -> dict:
             "macro_f1": f1_score(y_by_tier[tier], y_pred, average="macro"),
         }
     return results
+
+
+# ── Statistical Utilities ──
+
+def bootstrap_ci(values, stat_fn=None, n_bootstrap=1000, ci=0.95, seed=42):
+    """
+    Compute a bootstrap confidence interval for a statistic.
+
+    Args:
+        values: array-like of observations
+        stat_fn: callable applied to each resample (default: np.mean)
+        n_bootstrap: number of resamples
+        ci: confidence level (default 0.95 → 95% CI)
+        seed: random seed for reproducibility
+
+    Returns:
+        (point_estimate, ci_lower, ci_upper)
+    """
+    import numpy as np
+
+    values = np.asarray(values, dtype=np.float64)
+    values = values[~np.isnan(values)]
+    if len(values) == 0:
+        return (np.nan, np.nan, np.nan)
+
+    if stat_fn is None:
+        stat_fn = np.mean
+
+    rng = np.random.RandomState(seed)
+    point_estimate = float(stat_fn(values))
+
+    boot_stats = np.empty(n_bootstrap)
+    n = len(values)
+    for i in range(n_bootstrap):
+        sample = values[rng.randint(0, n, size=n)]
+        boot_stats[i] = stat_fn(sample)
+
+    alpha = 1 - ci
+    ci_lower = float(np.percentile(boot_stats, 100 * alpha / 2))
+    ci_upper = float(np.percentile(boot_stats, 100 * (1 - alpha / 2)))
+
+    return (point_estimate, ci_lower, ci_upper)
+
+
+def paired_permutation_test(scores_a, scores_b, n_permutations=10000, seed=42):
+    """
+    Two-sided paired permutation test for the difference of means.
+
+    Args:
+        scores_a: array-like of per-sample scores (e.g., per-document BLEU)
+        scores_b: array-like of per-sample scores (same length)
+        n_permutations: number of random sign-flips
+        seed: random seed
+
+    Returns:
+        (observed_diff, p_value) where observed_diff = mean(a) - mean(b)
+    """
+    import numpy as np
+
+    a = np.asarray(scores_a, dtype=np.float64)
+    b = np.asarray(scores_b, dtype=np.float64)
+
+    # Drop pairs where either is NaN
+    valid = ~(np.isnan(a) | np.isnan(b))
+    a, b = a[valid], b[valid]
+
+    if len(a) == 0:
+        return (0.0, 1.0)
+
+    diffs = a - b
+    observed_diff = float(np.mean(diffs))
+
+    rng = np.random.RandomState(seed)
+    count = 0
+    for _ in range(n_permutations):
+        signs = rng.choice([-1, 1], size=len(diffs))
+        perm_diff = np.mean(signs * diffs)
+        if abs(perm_diff) >= abs(observed_diff):
+            count += 1
+
+    p_value = (count + 1) / (n_permutations + 1)  # +1 for continuity
+    return (observed_diff, p_value)
