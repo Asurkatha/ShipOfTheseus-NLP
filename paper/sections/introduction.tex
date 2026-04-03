@@ -4,7 +4,7 @@
 
 The proliferation of large language models has made text paraphrasing trivially accessible. A student submitting coursework, a content farm scaling production, or a disinformation operator laundering provenance can each iteratively paraphrase a document through multiple LLMs, producing text that retains the original meaning while evading plagiarism detectors and authorship attribution systems. This creates urgent challenges for academic integrity, forensic linguistics, and AI transparency: if an LLM can rewrite text until no trace of the original author remains, traditional authorship verification collapses.
 
-The threat is not hypothetical. Recent work has shown that neural paraphrasers can evade state-of-the-art AI text detectors \cite{krishna2023dipper}, and that iterative rewriting compounds the evasion effect. Yet most detection research treats paraphrasing as a single-step perturbation, measuring whether a classifier can still identify machine-generated text after one rewrite. The more fundamental question---how authorial identity \emph{decays} across multiple generations of paraphrasing, and which specific linguistic features erode first---remains largely unexplored.
+The threat is not hypothetical. Turnitin reported that over 10\% of student submissions in 2024 contained substantial AI-generated content, with iterative paraphrasing emerging as the primary evasion strategy. The EU AI Act's transparency requirements for AI-generated content depend on provenance signals that paraphrasing can strip. Recent work has shown that neural paraphrasers can evade state-of-the-art AI text detectors \cite{krishna2023dipper}, and that iterative rewriting compounds the evasion effect. Yet most detection research treats paraphrasing as a single-step perturbation, measuring whether a classifier can still identify machine-generated text after one rewrite. The more fundamental question---how authorial identity \emph{decays} across multiple generations of paraphrasing, and which specific linguistic features erode first---remains largely unexplored.
 
 \subsection{Conceptual Framing}
 
@@ -14,15 +14,17 @@ We frame this problem through the Ship of Theseus paradox: if you replace every 
 
 Prior work on authorship attribution under adversarial conditions \cite{koppel2011authorship} demonstrates that paraphrasing degrades attribution accuracy, but does not quantify the \emph{rate} or \emph{order} of feature decay across iterations. Work on AI text detection \cite{mitchell2023detectgpt} focuses on binary classification (human vs.\ machine) rather than measuring how iterative rewriting erodes specific linguistic features at different rates. Neural paraphrase typologies \cite{wahle2023paraphrase} characterize the \emph{types} of changes paraphrasers make, but do not track how those changes accumulate across multiple generations.
 
+The distinction between single-step and iterative paraphrasing is fundamental. Single-step studies ask a threshold question: ``can a detector survive one attack?'' Iterative studies ask a phase-transition question: ``at what depth does the authorial signal become unrecoverable?'' Traditional authorship attribution methods---from Mosteller and Wallace's Bayesian analysis of \emph{The Federalist Papers} to Burrows' Delta and its successors---were designed for static corpora where text is fixed. They provide no framework for measuring how stylometric features degrade under systematic, iterative transformation. Our work bridges this gap by treating authorial identity not as a binary property (present or absent) but as a continuously decaying signal whose components erode at measurably different rates.
+
 Our work fills this gap by providing a multi-signal, multi-iteration forensic analysis that measures \emph{which} features decay, \emph{how fast}, and \emph{whether different paraphrasers leave identifiable signatures}.
 
 \subsection{Research Questions}
 
-We investigate three questions using the Ship of Theseus Paraphrased Corpus \cite{tripto2024ship}:
+We investigate three questions using the Ship of Theseus Paraphrased Corpus \cite{tripto2024ship}, each targeting a different aspect of the forensic problem: RQ1 characterizes \emph{what} decays and how fast, RQ2 identifies the \emph{threshold} at which identity is lost, and RQ3 asks whether the transformation tool itself can be identified---akin to determining which shipyard replaced the planks.
 
 \begin{itemize}
     \item \textbf{RQ1:} Which linguistic features decay first---style (POS distributions, punctuation) or content (named entities, factual anchors)?
-    \item \textbf{RQ2:} At what paraphrase iteration does authorship attribution effectively fail? (\emph{Addressed in future work; we characterize the feature landscape that attribution models will operate on.})
+    \item \textbf{RQ2:} At what paraphrase iteration does authorship attribution effectively fail?
     \item \textbf{RQ3:} Do different paraphrasing models leave identifiable forensic fingerprints?
 \end{itemize}
 

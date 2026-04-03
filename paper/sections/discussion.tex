@@ -28,6 +28,16 @@ Returning to our framing metaphor: the grammatical skeleton (hull) of the ship i
 
 This layered erosion---lexical planks first, then entity cargo, with grammatical hull and semantic meaning largely intact---suggests that authorial identity is not a single property but a composite of features with different resilience profiles.
 
+\subsection{Domain Effects}
+
+Our domain-specific analysis reveals that decay patterns are not uniform across text types. Three factors explain the variation:
+
+\textbf{Entity density drives content resilience.} XSum (BBC news) averages 18.7 entities per document and retains the most entities after paraphrasing (Recall 0.461 at $T_1$). Yelp (reviews) averages only 5.9 entities and shows the worst retention (0.362). Entity-dense texts provide more ``anchors'' that paraphrasers must explicitly handle, reducing the chance of inadvertent loss.
+
+\textbf{Register formality drives style resilience.} CMV (argumentative essays) shows the highest POS cosine at $T_1$ (0.976), likely because argumentative writing uses conventional syntactic structures---subject-verb-object constructions, logical connectives, subordinate clauses---that paraphrasers reproduce naturally. Yelp reviews, with more colloquial and variable syntax, offer paraphrasers more room to restructure.
+
+\textbf{Attribution robustness varies by domain.} Authorial identity persists longest in CMV (F1 = 0.706 at $T_1$) and news (XSum: 0.632), but collapses toward chance in explanatory text (ELI5: 0.542). This has practical implications: forensic authorship tools may need domain-specific calibration, as the ``point of no return'' is domain-dependent.
+
 \subsection{Source Author Effects}
 
 The finding that human-authored texts show slightly less POS drift than LLM-generated texts, while counterintuitive, is consistent with the observation that six distinct LLM architectures produce syntactically heterogeneous $T_0$ texts. A single paraphraser normalizes these diverse inputs toward its own syntactic template, producing measurable POS shifts. Human writing, being more syntactically conventional, offers less room for restructuring. This has a practical implication: paraphrasing detectors may perform differently on human-authored vs.\ LLM-authored source texts, and evaluation benchmarks should account for this asymmetry.
