@@ -40,7 +40,7 @@ Table~\ref{tab:baselines} presents BLEU, ROUGE-L, and BERTScore between $T_0$ an
  & BERTScore & .980 & .967 & .956 \\
 \bottomrule
 \end{tabular}
-\caption{Similarity between $T_0$ and $T_n$ across paraphrasers. BLEU and ROUGE-L are lexical; BERTScore is semantic. All values are means across the full corpus.}
+\caption{Similarity $T_0$ vs.\ $T_n$. BLEU/ROUGE-L lexical; BERTScore semantic. Corpus means.}
 \label{tab:baselines}
 \end{table}
 
@@ -48,15 +48,15 @@ Table~\ref{tab:baselines} presents BLEU, ROUGE-L, and BERTScore between $T_0$ an
 \centering
 \includegraphics[width=\columnwidth]{figures/baselines/aggregate_style_vs_content.png}
 \Description{Line chart showing BERTScore staying above 0.80 while BLEU drops below 0.40 across T0 to T3.}
-\caption{Aggregate style vs.\ content decay across all paraphrasers. BERTScore (semantic) remains above 0.80 while BLEU (lexical) drops below 0.40 by $T_1$. The widening gap confirms that meaning survives while surface features are replaced.}
+\caption{Aggregate style vs.\ content decay (RQ1). BERTScore stays above 0.80 while BLEU drops below 0.40 by $T_1$: meaning survives, surface is replaced.}
 \label{fig:decay}
 \end{figure}
 
-Across all paraphrasers, BERTScore remains between 0.80--0.98, while BLEU drops as low as 0.002---semantic meaning is preserved while lexical surface is replaced. The sharpest decay occurs at $T_1$: ChatGPT BLEU drops 81\% at $T_1$ with only 5\% additional loss through $T_3$. The aggressiveness ranking, consistent across metrics, is: Pegasus (Slight) $>$ Dipper (Low) $\approx$ PaLM2 $>$ Pegasus (Full) $>$ ChatGPT $>$ Dipper $>$ Dipper (High). Within-family variation (Dipper BLEU range: 0.002--0.492) exceeds between-family variation, providing preliminary evidence for RQ3. Exploratory analysis confirms monotonic text compression (279 to 184 words), punctuation erosion (exclamation marks $-$63\%), and vocabulary shift toward generic LLM register across tiers.
+Across all paraphrasers, BERTScore remains 0.80--0.98 while BLEU drops as low as 0.002: meaning is preserved while surface is replaced. The sharpest decay occurs at $T_1$, with only modest additional loss through $T_3$. Within-family variation (Dipper BLEU range: 0.002--0.492) exceeds between-family variation, which is preliminary evidence for RQ3. Exploratory analysis also shows monotonic text compression (279$\rightarrow$184 words) and punctuation erosion across tiers.
 
 \subsection{POS Tag Distributions: Stylistic Drift (RQ1)}
 
-Table~\ref{tab:pos_cosine} reports the POS cosine similarity between $T_0$ and $T_1$ for all seven paraphrasers. The ranking from most conservative to most aggressive closely mirrors the lexical metric ranking from Section~5.1.
+Table~\ref{tab:pos_cosine} reports POS cosine similarity ($T_0$ vs.\ $T_1$) for all seven paraphrasers. The ranking mirrors the lexical ordering from \S5.1.
 
 \begin{table}[h]
 \centering
@@ -74,11 +74,11 @@ Pegasus (Full) & .9626 & .0834 \\
 Dipper (High) & .8782 & .0906 \\
 \bottomrule
 \end{tabular}
-\caption{POS cosine similarity ($T_0$ vs.\ $T_1$) across all paraphrasers. Higher values indicate less syntactic restructuring. Even the most aggressive paraphraser (Dipper High) retains a cosine of 0.88, indicating that grammatical structure is remarkably resilient to paraphrasing.}
+\caption{POS cosine ($T_0$ vs.\ $T_1$). Higher = less syntactic restructuring. Even Dipper (High) retains 0.88---grammar is remarkably resilient.}
 \label{tab:pos_cosine}
 \end{table}
 
-\textbf{Key finding:} Grammatical structure is resilient. Even Dipper (High), which reduces BLEU to 0.002, retains a POS cosine of 0.878. The syntactic skeleton bends but does not break. The spread within the Dipper family alone (0.984--0.878) exceeds the total spread across all other model families, reinforcing that \emph{paraphraser configuration matters more than model architecture}.
+\textbf{Key finding:} Grammatical structure is resilient. Even Dipper (High), which pushes BLEU to 0.002, retains POS cosine 0.878. The spread within the Dipper family alone (0.984--0.878) exceeds the spread across all other model families, reinforcing that \emph{paraphraser configuration matters more than model architecture}.
 
 \subsection{NER Entity Preservation: Content Erasure (RQ1)}
 
@@ -100,43 +100,41 @@ Dipper (Default) & .330 & .424 & .537 \\
 Dipper (High) & .021 & .038 & .059 \\
 \bottomrule
 \end{tabular}
-\caption{NER entity metrics ($T_0$ vs.\ $T_1$). Recall measures entity retention (low = dropping); Precision measures fidelity (low = novel entity introduction). Dipper (High) destroys 96\% of named entities.}
+\caption{NER entity metrics ($T_0$ vs.\ $T_1$). Low Recall = dropping; low Precision = novel-entity introduction. Dipper (High) destroys 96\% of named entities.}
 \label{tab:ner_metrics}
 \end{table}
 
-\textbf{Key finding:} Named entities are far more fragile than grammatical structure. Dipper (High) retains only 3.8\% of original entities (Recall = 0.038), while its POS cosine remains at 0.878. This asymmetry is central to our answer to RQ1: content-bearing features decay faster than stylistic features.
+\textbf{Key finding:} Entities are far more fragile than grammar. Dipper (High) retains only 3.8\% of original entities (Recall 0.038) while its POS cosine stays at 0.878. This asymmetry answers RQ1: content decays faster than style.
 
 \subsection{Controlled Experiments: The 5.8$\times$ Sensitivity Gap (RQ1)}
 
-Using Dipper Low vs.\ High as a controlled comparison (identical architecture, different intensity), content features (NER Recall delta: 0.610) are \textbf{5.8$\times$ more sensitive} to paraphrasing intensity than stylistic features (POS cosine delta: 0.104). Figure~\ref{fig:dipper_intensity} visualizes this asymmetry. The Pegasus coverage experiment (Slight: 25\% vs.\ Full: 100\% of sentences) confirms that paraphrasers primarily \emph{shed} entities (Recall drops 0.329) rather than introducing novel ones (Precision drops only 0.122).
+Using Dipper Low vs.\ High as a controlled comparison, content features (NER Recall delta: 0.610) are \textbf{5.8$\times$ more sensitive} to paraphrasing intensity than stylistic features (POS cosine delta: 0.104); Figure~\ref{fig:dipper_intensity} visualises the asymmetry. The Pegasus coverage experiment confirms that paraphrasers primarily \emph{shed} entities (Recall $-$0.329) rather than introduce novel ones (Precision $-$0.122).
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/fingerprints/q3_dipper_intensity.png}
 \Description{Two bar charts comparing Dipper Low vs High: POS cosine drops 0.104, NER Recall drops 0.610.}
-\caption{Dipper intensity experiment: content is 5.8$\times$ more sensitive to intensity than style (RQ1).}
+\caption{Dipper intensity: content is 5.8$\times$ more sensitive than style (RQ1).}
 \label{fig:dipper_intensity}
 \end{figure}
 
 \subsection{Paraphraser Fingerprints (RQ3)}
 
-Figure~\ref{fig:fingerprints} plots each paraphraser in the style-vs-content preservation space. Each model occupies a distinct region, confirming that paraphrasers leave identifiable forensic fingerprints:
+Figure~\ref{fig:fingerprints} plots each paraphraser in style-vs-content space; each occupies a distinct region, confirming identifiable forensic fingerprints.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/fingerprints/style_vs_content_scatter.png}
 \Description{Scatter plot showing seven paraphrasers positioned by POS cosine (x-axis) and NER Jaccard (y-axis), with quadrant labels.}
-\caption{Each paraphraser occupies a distinct position in the POS cosine (style) vs.\ NER Jaccard (content) space. Pegasus (Slight) preserves both; Dipper (High) destroys both. Models with similar POS scores can have very different NER profiles (e.g., Pegasus Full vs.\ Dipper Default), suggesting fingerprints are multi-dimensional.}
+\caption{Paraphrasers in POS cosine (style) vs.\ NER Jaccard (content) space (RQ3). Pegasus (Slight) preserves both; Dipper (High) destroys both; models with similar POS can diverge sharply on NER.}
 \label{fig:fingerprints}
 \end{figure}
 
-Notably, Pegasus (Full) and Dipper (Default) have nearly identical POS cosine ($\approx$0.963) but very different NER profiles: Pegasus Full retains high Precision (0.846, rarely introduces novel entities) while Dipper Default has low Precision (0.537, frequent entity introduction). This demonstrates that fingerprints are \emph{multi-dimensional}---a single metric cannot distinguish all paraphrasers, but the combination of style and content signals creates separable forensic signatures.
+Notably, Pegasus (Full) and Dipper (Default) share POS cosine ($\approx$0.963) but diverge on NER Precision (0.846 vs.\ 0.537): fingerprints are \emph{multi-dimensional}, and combining style and content signals produces separable signatures.
 
 \subsection{Multi-Tier Decay: T0 Through T3 (RQ1)}
 
-The preceding sections compared $T_0$ to $T_1$ only. We now extend the analysis across all three paraphrase iterations to examine whether the layered erosion pattern holds at deeper levels.
-
-Table~\ref{tab:multitier} presents POS cosine and NER Recall for all seven paraphrasers across $T_1$, $T_2$, and $T_3$. Figure~\ref{fig:composite_decay} visualizes the aggregate pattern across all features.
+Extending to $T_2$ and $T_3$, Table~\ref{tab:multitier} reports POS cosine and NER Recall at every tier; Figure~\ref{fig:composite_decay} visualizes the aggregate pattern.\footnote{T1 values in Tables~\ref{tab:pos_cosine} and \ref{tab:ner_metrics} differ slightly from this table because the multi-tier pivots are aligned per-paraphraser across all four tiers, producing different sample populations (508--3,018 per paraphraser) than the 18,058-row all-paraphrasers pivot.}
 
 \begin{table}[h]
 \centering
@@ -156,7 +154,7 @@ Pegasus (Full) & .964 & .948 & .938 & .559 & .460 & .418 \\
 Dipper (High) & .884 & .863 & .843 & .043 & .018 & .012 \\
 \bottomrule
 \end{tabular}
-\caption{POS cosine similarity and NER Recall ($T_0$ vs.\ $T_n$) across three paraphrase iterations. POS cosine decays gradually (even Dipper High retains 0.843 at $T_3$), while NER Recall continues to drop steeply (Dipper High: 1.2\% at $T_3$).}
+\caption{POS cosine and NER Recall ($T_0$ vs.\ $T_n$) across tiers. POS decays gradually; NER Recall drops steeply (Dipper High: 1.2\% at $T_3$).}
 \label{tab:multitier}
 \end{table}
 
@@ -164,58 +162,86 @@ Dipper (High) & .884 & .863 & .843 & .043 & .018 & .012 \\
 \centering
 \includegraphics[width=\columnwidth]{figures/baselines/feature_decay_layered.png}
 \Description{Line chart showing six features decaying at different rates from T0 to T3: BERTScore and POS cosine stay above 0.90, NER Recall drops to 0.43, BLEU and ROUGE-L collapse below 0.30.}
-\caption{Composite feature decay across $T_0 \rightarrow T_3$, aggregated over all paraphrasers. Features show \emph{layered erosion}: BERTScore (semantic meaning) and POS cosine (grammar) remain above 0.90, while NER Recall (entities) drops steadily to 0.43, and BLEU/ROUGE-L (lexical surface) collapse below 0.30. This is the signature visualization for RQ1.}
+\caption{Composite feature decay $T_0{\rightarrow}T_3$ aggregated over all paraphrasers (RQ1). Layered erosion: BERTScore and POS cosine stay above 0.90; NER Recall falls to 0.43; BLEU/ROUGE-L collapse below 0.30.}
 \label{fig:composite_decay}
 \end{figure}
 
-The layered erosion pattern holds at all depths: at every tier, the ordering BERTScore $>$ POS cosine $>$ NER Recall $>$ ROUGE-L $>$ BLEU is preserved, confirming that erosion rates are intrinsic to feature type. Even at $T_3$, Dipper (High) retains POS cosine of 0.843 while NER Recall collapses to 1.2\%. Dependency tree depth shows minimal change for most paraphrasers, indicating syntactic complexity is preserved even when surface features are replaced.
+Layered erosion holds at all depths: the ordering BERTScore $>$ POS cosine $>$ NER Recall $>$ ROUGE-L $>$ BLEU is preserved at every tier. Even at $T_3$, Dipper (High) retains POS cosine 0.843 while NER Recall collapses to 1.2\%. Dependency depth is nearly flat across tiers.
 
 \subsection{Authorship Attribution Decay (RQ2)}
 
-We train three classifiers---Logistic Regression, SVM (RBF), and Random Forest---on the 23-dimensional feature vector extracted from $T_0$ texts, with binary source labels (Human vs.\ LLM). We then evaluate each classifier on the same articles at $T_1$, $T_2$, and $T_3$ to measure how quickly authorial identity becomes unrecoverable. All classifiers use balanced class weighting and standardized features.
-
-Figure~\ref{fig:attribution_decay} shows the F1 decay curves across six paraphrasers and three classifiers. For Logistic Regression---the most interpretable model---macro F1 drops below 0.5 (random baseline for balanced binary classification) at $T_1$ for Dipper (High), confirming that a single aggressive paraphrase iteration is sufficient to erase authorial identity from stylometric features. Pegasus (Slight) retains the most signal, with F1 remaining above 0.5 through $T_3$ for ensemble methods.
+Following the protocol in \S4.3, Figure~\ref{fig:attribution_decay} shows F1 decay curves across six paraphrasers and three classifiers. For Logistic Regression, macro F1 drops below the 0.5 random baseline at $T_1$ under Dipper (High): a single aggressive iteration is enough to erase stylometric identity. Pegasus (Slight) retains the most signal, with ensemble methods staying above 0.5 through $T_3$.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/fingerprints/attribution_decay_binary.png}
 \Description{Three-panel chart showing F1 decay from T0 to T3 for six paraphrasers across Logistic Regression, SVM, and Random Forest classifiers.}
-\caption{Binary attribution (Human vs.\ LLM) F1 decay across paraphrase iterations. The dashed gray line marks F1 = 0.5 (random baseline). Aggressive paraphrasers (Dipper High) push F1 below baseline at $T_1$; conservative paraphrasers (Pegasus Slight) retain some signal through $T_3$.}
+\caption{Binary (Human vs.\ LLM) F1 decay across tiers (RQ2). Dashed gray line is the 0.5 random baseline. Dipper (High) drops below baseline at $T_1$; Pegasus (Slight) retains signal through $T_3$.}
 \label{fig:attribution_decay}
 \end{figure}
 
 \subsection{Paraphraser Identification (RQ3)}
 
-We construct 24-dimensional delta feature vectors ($T_1 - T_0$ for POS proportions, dependency depth, and text statistics, plus NER Jaccard/Recall/Precision) and train a 6-class classifier to identify which paraphraser produced a given $T_1$ text. PaLM2 is excluded due to insufficient shared articles (only 37 common (key, source) pairs across all 7 paraphrasers; excluding PaLM2 yields 1,546 common pairs). We use 80/20 stratified train-test splits.
-
-SVM (RBF) achieves the highest macro F1 of \textbf{0.755} at 6-class paraphraser identification, confirming that each paraphraser leaves a distinct forensic fingerprint in the delta feature space. Figure~\ref{fig:confusion} shows the confusion matrix: Dipper (High) is the most identifiable (93\% correct classification) due to its extreme transformation signature, while Dipper (Low) is most confusable with Dipper Default (23\% misclassified).
+Following the protocol in \S4.4, SVM (RBF) achieves the highest macro F1 of \textbf{0.755} at 6-class paraphraser identification, confirming that each paraphraser leaves a distinct fingerprint in the delta feature space. Figure~\ref{fig:confusion}: Dipper (High) is most identifiable (93\% correct) while Dipper (Low) is most confusable with Dipper Default.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/fingerprints/paraphraser_confusion_matrix.png}
 \Description{Confusion matrix showing 6-class paraphraser identification accuracy. Dipper High is 93 percent correct; Dipper Low is 57 percent correct.}
-\caption{Confusion matrix for 6-class paraphraser identification (SVM, F1 = 0.755). Dipper (High) is most distinctive; Dipper (Low) is most confusable with Dipper Default. Pegasus variants are well-separated from Dipper variants.}
+\caption{6-class paraphraser confusion matrix (SVM, macro F1 = 0.755, RQ3). Dipper (High) most distinctive; Pegasus variants well-separated from Dipper.}
 \label{fig:confusion}
 \end{figure}
 
-Random Forest feature importance (Figure~\ref{fig:importance}) reveals that the most discriminative features are NER Jaccard (entity preservation), word count ratio (text compression), and NER Precision (novel entity introduction rate). POS tag deltas contribute moderately, with AUX and NOUN shifts among the most informative syntactic signals.
+Random Forest feature importance (Figure~\ref{fig:importance}) ranks NER Jaccard, word count ratio, and NER Precision as the top three; POS deltas contribute moderately, with AUX and NOUN shifts most informative.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/fingerprints/paraphraser_feature_importance.png}
 \Description{Horizontal bar chart showing feature importance for paraphraser identification. NER Jaccard, word count ratio, and NER Precision are the top three features.}
-\caption{Feature importance for paraphraser identification (Random Forest). Entity-level features (NER Jaccard, Precision) and text compression (word count ratio) are more discriminative than POS tag shifts, consistent with our RQ1 finding that content features are more sensitive to paraphrasing than stylistic features.}
+\caption{Feature importance for paraphraser identification (Random Forest, RQ3). Entity-level features and text compression dominate POS shifts, consistent with the RQ1 finding that content decays faster than style.}
 \label{fig:importance}
 \end{figure}
 
 \subsection{Domain-Specific Analysis}
 
-Decay patterns vary by domain (Figure~\ref{fig:domain_heatmap}). Entity-rich domains like XSum (18.7 entities/doc) show better NER retention (Recall 0.461) than low-entity domains like Yelp (5.9 entities, Recall 0.362). CMV (arguments) has the most resilient POS structure (cosine 0.976), while ELI5 attribution collapses nearest to chance (F1 = 0.542 at $T_1$). Formal, structured domains preserve more stylometric signal than casual text.
+Decay varies by domain (Figure~\ref{fig:domain_heatmap}). Entity-rich XSum (18.7 entities/doc) retains NER better (Recall 0.461) than Yelp (5.9 entities, 0.362); CMV has the most resilient POS (0.976); ELI5 attribution collapses nearest chance ($F_1$=0.542 at $T_1$).
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/domain/domain_paraphraser_heatmap.png}
 \Description{Two heatmaps showing POS cosine and NER Recall by dataset and paraphraser.}
-\caption{Domain $\times$ paraphraser preservation heatmap. Entity-rich domains retain more content; POS resilience is highest in argumentative text.}
+\caption{Domain $\times$ paraphraser preservation heatmap (RQ1). Entity-rich domains retain more content; POS resilience is highest in argumentative text.}
 \label{fig:domain_heatmap}
+\end{figure}
+
+Figure~\ref{fig:domain_attribution} shows domain-wise attribution decay: CMV retains the strongest signal (F1 0.706 at $T_1$), while ELI5 and Yelp collapse toward random by $T_1$. Forensic tools likely need domain-specific calibration.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/domain/domain_attribution_decay.png}
+\Description{Line chart showing attribution F1 decay across T0-T3 for seven datasets. CMV and XSum retain the most signal; ELI5 and Yelp collapse toward random.}
+\caption{Attribution F1 decay by domain (Dipper, Logistic Regression, RQ2). CMV and XSum retain signal longest; ELI5 and Yelp collapse to random baseline by $T_1$.}
+\label{fig:domain_attribution}
+\end{figure}
+
+\subsection{Identity Trajectory in Feature Space}
+
+Applying t-SNE to the 23-dim feature vectors at each tier for Dipper (3,010 articles), Figure~\ref{fig:tsne} shows $T_0$ documents occupying a diverse region while $T_3$ clusters into a homogeneous region---visual evidence of convergence toward a machine-normalised style.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/fingerprints/identity_trajectory_tsne.png}
+\Description{Two t-SNE scatter plots: left colored by paraphrase tier showing T3 clusters more tightly than T0; right showing Human vs LLM centroids converging from T0 to T3.}
+\caption{Identity trajectory t-SNE projection (RQ2). Left: colored by tier, showing progressive clustering. Right: Human vs.\ LLM centroids at $T_0$ (circles) and $T_3$ (crosses) converge under paraphrasing.}
+\label{fig:tsne}
+\end{figure}
+
+To validate the visual impression quantitatively (t-SNE can mislead), we compute silhouette, $k$-NN purity ($k{=}10$), and Human$\leftrightarrow$LLM centroid distance at each tier. All three decline monotonically from $T_0$ to $T_3$ (Figure~\ref{fig:tsne_quant}): centroid distance drops 0.426$\rightarrow$0.287 and $k$-NN purity 0.881$\rightarrow$0.839. Identity is eroding in feature space, not merely compressing visually.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/fingerprints/identity_quantitative_metrics.png}
+\Description{Three bar charts showing silhouette score, k-NN purity, and centroid distance decreasing from T0 to T3.}
+\caption{Quantitative validation of identity erosion (RQ2). Silhouette, $k$-NN purity, and Human$\leftrightarrow$LLM centroid distance all decline $T_0{\rightarrow}T_3$.}
+\label{fig:tsne_quant}
 \end{figure}

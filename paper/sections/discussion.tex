@@ -2,17 +2,17 @@
 
 \subsection{Why Content Decays Faster Than Style}
 
-Our central finding---that named entities decay 5.8$\times$ faster than POS distributions when paraphrasing intensity increases---has a straightforward mechanistic explanation. POS distributions are \emph{statistical aggregates}: they summarize the proportion of nouns, verbs, adjectives, etc.\ across an entire document. Even aggressive paraphrasing that restructures every sentence tends to produce text with broadly similar grammatical composition. A noun phrase may be rephrased, but it typically remains a noun phrase.
+Our central finding---that entities decay 5.8$\times$ faster than POS distributions as intensity rises---has a mechanistic explanation. POS distributions are \emph{statistical aggregates}: even aggressive paraphrasing that restructures every sentence tends to produce text with broadly similar grammatical composition; a noun phrase gets rephrased but typically remains a noun phrase.
 
-Named entities, by contrast, are \emph{specific lexical items}---proper nouns, dates, and organizations that must be reproduced exactly to count as preserved. Even minor reformulations (``New York City'' $\rightarrow$ ``NYC'' $\rightarrow$ ``the city'') count as entity loss under our string-matching criterion. This granularity makes NER a much more sensitive probe of text transformation than distributional metrics.
+Named entities, by contrast, are \emph{specific lexical items} that must be reproduced exactly to count as preserved. Minor reformulations (``New York City'' $\rightarrow$ ``NYC'' $\rightarrow$ ``the city'') register as entity loss under string matching, making NER a sharper probe than distributional metrics.
 
 The POS tag delta heatmap reveals which specific tags drive the aggregate cosine shift. NOUN and PUNCT show the largest absolute changes under Dipper (High), consistent with text compression (shorter sentences, fewer proper nouns). Notably, PROPN (proper nouns) decreases across nearly all paraphrasers, aligning with the entity dropping we observe in the NER analysis.
 
-Crucially, our multi-tier analysis (Section~5.10) confirms that this pattern is not an artifact of the first iteration. The ordering BERTScore $>$ POS cosine $>$ NER Recall $>$ ROUGE-L $>$ BLEU holds at every tier from $T_1$ through $T_3$, with no feature type ``catching up'' to another. Erosion rates are intrinsic to the feature type: aggregate distributional metrics (POS, BERTScore) are inherently more robust than point-specific features (named entities, exact n-grams).
+Crucially, the multi-tier analysis confirms this is not a first-iteration artifact: the ordering BERTScore $>$ POS cosine $>$ NER Recall $>$ ROUGE-L $>$ BLEU holds at every tier, with no feature ``catching up'' to another. Erosion rates are intrinsic to feature type---aggregate distributional metrics (POS, BERTScore) are inherently more robust than point-specific ones (entities, exact n-grams).
 
 \subsection{Paraphraser Fingerprints Are Multi-Dimensional}
 
-The style-vs-content scatter plot (Figure~\ref{fig:fingerprints}) reveals that a single metric is insufficient to distinguish all paraphrasers. Pegasus (Full) and Dipper (Default) cluster at nearly identical POS cosine ($\approx$0.963), but their NER profiles diverge sharply: Pegasus drops entities but rarely introduces novel ones (Precision 0.846), while Dipper Default both drops and introduces entities (Precision 0.537). This suggests that effective paraphraser identification (RQ3) will require \emph{multi-signal} classifiers combining syntactic, lexical, and entity-level features.
+The style-vs-content scatter (Figure~\ref{fig:fingerprints}) shows no single metric distinguishes all paraphrasers. Pegasus (Full) and Dipper (Default) share POS cosine ($\approx$0.963) but diverge on NER Precision (0.846 vs.\ 0.537): effective paraphraser identification (RQ3) requires \emph{multi-signal} classifiers.
 
 \subsection{Implications for Forensic Applications}
 

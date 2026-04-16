@@ -21,7 +21,11 @@ Seven paraphraser variants are used across four model families:
 
 \subsection{Preprocessing}
 
-After loading all seven datasets, we applied light preprocessing: removing PaLM2 markdown formatting artifacts, normalizing unicode whitespace, and filtering texts with fewer than 10 words. We preserved casing, punctuation patterns, and sentence structure since these are the stylometric features under investigation in RQ1. After deduplication on (document key, version), the processed corpus contains \textbf{66,400 rows}: 3,020 originals at $T_0$ and approximately 21,000 rows each at $T_1$, $T_2$, and $T_3$. For RQ2, we train classifiers on $T_0$ features and evaluate on $T_1$--$T_3$; for RQ3, we use group-aware 80/20 splits stratified by document identity to prevent leakage. Table~\ref{tab:corpus_stats} summarizes the corpus.
+After loading all seven datasets, we applied light preprocessing: removing PaLM2 markdown formatting artifacts, normalizing unicode whitespace, and filtering texts with fewer than 10 words. We preserved casing, punctuation patterns, and sentence structure since these are the stylometric features under investigation in RQ1. After deduplication on (document key, version), the processed corpus contains \textbf{66,400 rows}: 3,020 originals at $T_0$ and approximately 21,000 rows each at $T_1$, $T_2$, and $T_3$. Table~\ref{tab:corpus_stats} summarizes the corpus.
+
+\subsection{Experimental Splits}
+
+The experimental design is split-aware across two axes to avoid leakage. Along the \emph{tier} axis, RQ2 classifiers are trained exclusively on $T_0$ features and evaluated on $T_1$--$T_3$, so the model never sees a paraphrased copy of a document it was trained on. Along the \emph{document} axis, RQ3 paraphraser-identification uses \texttt{GroupShuffleSplit} with an 80/20 train--test ratio keyed on document identity, so every paraphrase of a given source document is confined to a single split. This prevents the classifier from memorising a document's $T_0$ signature and recognising it in paraphrased form at test time. Classifier hyperparameters are selected via 5-fold stratified cross-validation on the $T_0$ training set only; the held-out 20\% document split and the $T_1$--$T_3$ tiers are touched only at final evaluation.
 
 \begin{table}[h]
 \centering
